@@ -3,6 +3,10 @@
 
 int ReadGPASCII3DDataFile(const std::string& filename, GP3DData& data)
 {
+  if (!boost::filesystem::exists(filename)) {
+    throw std::runtime_error("No such file: " + filename);
+  }
+
   std::ifstream fin;
   std::string line;
   GPASCIIDataLineParser<std::string::iterator> lparser;
@@ -53,6 +57,55 @@ int ReadGPASCII3DDataFile(const std::string& filename, GP3DData& data)
                                "'.");
     }
   }
+
+  return 0;
+}
+
+
+int ReadGPBinary3DDataFile(const std::string& filename, GP3DData& data)
+{
+  if (!boost::filesystem::exists(filename)) {
+    throw std::runtime_error("No such file: " + filename);
+  }
+  // get size of file so we can compute how many elements it holds
+  auto fs = boost::filesystem::file_size(filename);
+  size_t N = fs/sizeof(float);
+  std::ifstream fin;
+
+  data.x.clear();
+  data.y.clear();
+  data.f.clear();
+
+  fin.open(filename.c_str(), std::ios::in | std::ios::binary);
+  BOOST_SCOPE_EXIT(&fin) { fin.close(); }
+  BOOST_SCOPE_EXIT_END
+
+  float buffer;
+  // first number is Ny
+  fin.read(reinterpret_cast<char*>(&buffer),sizeof(float));
+  size_t Ny = buffer;
+  data.y.resize(Ny);
+  // read in y coordinates
+  fin.read(reinterpret_cast<char*>(data.y.data()),Ny*sizeof(float));
+  // file holds a total of N elements.
+  // - one of these is the number of y corrdinates
+  // - Ny of these are the y coordinates
+  // - That leaves N - 1 - Ny for the x coordinates and function values.
+  //
+  // N will also be: N = 1 + Ny + Nx + Nx*Ny
+  // so N - 1 - Ny = Nx + Nx*Ny = Nx*(1 + Ny)
+  // which means Nx = (N - 1 - Ny)/1 + Ny)
+  size_t Nx = (N - 1 - Ny)/(1 + Ny);
+  data.x.resize(Nx);
+  data.f.resize(Nx*Ny);
+  // read in data
+  for(int i = 0; i < Nx; ++i)
+  {
+    fin.read(reinterpret_cast<char*>(data.x.data()+i),sizeof(float));
+    fin.read(reinterpret_cast<char*>(data.f.data()+i*Ny),Ny*sizeof(float));
+  }
+
+
 
   return 0;
 }

@@ -219,7 +219,7 @@ TEST_CASE("File Input/Output", "[parsing]")
     }
   }
 
-  SECTION("File Read Functions")
+  SECTION("ASCII File Read Functions")
   {
     ofstream out("test-3d.txt");
 
@@ -262,7 +262,53 @@ TEST_CASE("File Input/Output", "[parsing]")
       CHECK(data.y.size() == 3);
       CHECK(data.f.size() == 6);
     }
+
+    SECTION("Binary Matrix")
+    {
+      GP3DData data;
+
+      data.x.push_back(1.1);
+      data.x.push_back(1.2);
+
+      data.y.push_back(2.1);
+      data.y.push_back(2.2);
+      data.y.push_back(2.3);
+
+      data.f.push_back(1.1 + 2.1);
+      data.f.push_back(1.1 + 2.2);
+      data.f.push_back(1.1 + 2.3);
+      data.f.push_back(1.2 + 2.1);
+      data.f.push_back(1.2 + 2.2);
+      data.f.push_back(1.2 + 2.3);
+
+      WriteGPBinary3DDataFile("test-3d.bin", data);
+
+      data.clear();
+
+      ReadGPBinary3DDataFile("test-3d.bin", data);
+
+      CHECK(data.x.size() == 2);
+      CHECK(data.y.size() == 3);
+      CHECK(data.f.size() == 6);
+
+      CHECK(data.x[0] == Approx(1.1));
+      CHECK(data.x[1] == Approx(1.2));
+
+      CHECK(data.y[0] == Approx(2.1));
+      CHECK(data.y[1] == Approx(2.2));
+      CHECK(data.y[2] == Approx(2.3));
+
+      CHECK(data.f[0] == Approx(1.1+2.1));
+      CHECK(data.f[1] == Approx(1.1+2.2));
+      CHECK(data.f[2] == Approx(1.1+2.3));
+      CHECK(data.f[3] == Approx(1.2+2.1));
+      CHECK(data.f[4] == Approx(1.2+2.2));
+      CHECK(data.f[5] == Approx(1.2+2.3));
+
+
+    }
   }
+
 
   SECTION("File Write Functions")
   {
@@ -449,18 +495,31 @@ TEST_CASE("File Input/Output", "[parsing]")
 
 TEST_CASE("Performance Benchmarks", "[!hide][benchmarks]")
 {
-      SECTION("3D ASCII Writer")
+      SECTION("3D ASCII vs Binary Writer")
       {
-        BM::PerformanceBenchmark bm("ascii-3d-write");
+
+        std::string name = "3D-ascii-vs-binary-writer";
+        std::string fn = BM::PerformanceBenchmark::getStorageFilename(name);
+        if( boost::filesystem::exists(fn) )
+        {
+          boost::filesystem::remove(fn);
+        }
+        BM::PerformanceBenchmark bm(name);
         BM::Benchmark meter;
 
         GP3DData data;
         MakeLarge3DData(100,200,data);
+
         meter.run([&]() { WriteGPASCII3DDataFile("test-3d.txt", data); });
+        bm(meter);
+        std::cout << "ASCII:" << meter.get_measurement() << "\n";
+
+        meter.run([&]() { WriteGPBinary3DDataFile("test-3d.bin", data); });
         auto result = bm(meter);
-        std::cout << "ascii 3d writer"
+        std::cout << "Binary:" << meter.get_measurement() << "\n";
+
+        std::cout << name
                   << "\n";
-        std::cout << "Measurement:" << meter.get_measurement() << "\n";
         std::cout << "faster than baseline? " << result.is_faster_than_baseline
                   << "\n";
         std::cout << "faster than minimum? " << result.is_faster_than_minimum
@@ -470,6 +529,43 @@ TEST_CASE("Performance Benchmarks", "[!hide][benchmarks]")
         std::cout << "speedup over minimum: "
                   << result.speedup_over_minimum << "\n";
         std::cout << std::endl;
+
+      SECTION("3D ASCII vs Binary Reader")
+      {
+
+        std::string name = "3D-ascii-vs-binary-reader";
+        std::string fn = BM::PerformanceBenchmark::getStorageFilename(name);
+        if( boost::filesystem::exists(fn) )
+        {
+          boost::filesystem::remove(fn);
+        }
+        BM::PerformanceBenchmark bm(name);
+        BM::Benchmark meter;
+
+        GP3DData data;
+        MakeLarge3DData(100,200,data);
+
+        meter.run([&]() { ReadGPASCII3DDataFile("test-3d.txt", data); });
+        bm(meter);
+        std::cout << "ASCII:" << meter.get_measurement() << "\n";
+
+        meter.run([&]() { ReadGPBinary3DDataFile("test-3d.bin", data); });
+        auto result = bm(meter);
+        std::cout << "Binary:" << meter.get_measurement() << "\n";
+
+        std::cout << name
+                  << "\n";
+        std::cout << "faster than baseline? " << result.is_faster_than_baseline
+                  << "\n";
+        std::cout << "faster than minimum? " << result.is_faster_than_minimum
+                  << "\n";
+        std::cout << "speedup over baseline: "
+                  << result.speedup_over_baseline << "\n";
+        std::cout << "speedup over minimum: "
+                  << result.speedup_over_minimum << "\n";
+        std::cout << std::endl;
+      }
+
       }
 
       SECTION("3D ASCII -> Binary Conversion")

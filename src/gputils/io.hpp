@@ -72,6 +72,7 @@ struct GP3DData {
 };
 
 int ReadGPASCII3DDataFile(const std::string& filename, GP3DData& data);
+int ReadGPBinary3DDataFile(const std::string& filename, GP3DData& data);
 int WriteGPBinary3DDataFile(const std::string& filename, const GP3DData& data);
 int WriteGPASCII3DDataFile(const std::string& filename, const GP3DData& data);
 
