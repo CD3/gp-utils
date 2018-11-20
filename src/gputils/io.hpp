@@ -16,22 +16,12 @@
 
 #include <fstream>
 #include <iomanip>
-#include <string>
-#include <vector>
+
+#include "./structs.hpp"
 
 namespace spt = boost::spirit;
 namespace qi = boost::spirit::qi;
 namespace phx = boost::phoenix;
-
-struct GPDataLine {
-  std::vector<float> data;
-  std::string comment;
-  void clear()
-  {
-    data.clear();
-    comment.clear();
-  }
-};
 
 BOOST_FUSION_ADAPT_STRUCT(GPDataLine,
                           (std::vector<float>, data)(std::string, comment))
@@ -56,18 +46,6 @@ struct GPASCIIDataLineParser : spt::qi::grammar<Iterator, GPDataLine()> {
            | *whitespace >> *data >> *whitespace >>
                  comment   // comment with optional data
            | *whitespace;  // blank line
-  }
-};
-
-struct GP3DData {
-  std::vector<float> x;
-  std::vector<float> y;
-  std::vector<float> f;
-  void clear()
-  {
-    x.clear();
-    y.clear();
-    f.clear();
   }
 };
 
