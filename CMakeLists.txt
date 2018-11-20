@@ -25,10 +25,12 @@ find_package( Boost COMPONENTS filesystem REQUIRED )
 find_package( Eigen3 3.3 REQUIRED )
 
 string( REGEX REPLACE "^lib" "" LIB_NAME ${PROJECT_NAME} )
-add_library( ${LIB_NAME} INTERFACE)
+add_library( ${LIB_NAME} )
 add_library( ${PROJECT_NAME}::${LIB_NAME} ALIAS ${LIB_NAME} )
 target_sources(
 ${LIB_NAME}
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/gputils/io.cpp>
   INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/gputils/io.hpp>
 )
