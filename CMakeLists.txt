@@ -22,7 +22,7 @@ configure_file( "${CMAKE_CURRENT_BINARY_DIR}/include/${PROJECT_NAME}_version.h"
 
 # common dependencies
 find_package( Boost COMPONENTS filesystem REQUIRED )
-find_package( Eigen3 3.3 REQUIRED )
+#find_package( Eigen3 3.3 REQUIRED )
 
 string( REGEX REPLACE "^lib" "" LIB_NAME ${PROJECT_NAME} )
 add_library( ${LIB_NAME} )
@@ -43,7 +43,7 @@ target_link_libraries(${LIB_NAME}
                         INTERFACE
                           Boost::boost
                           Boost::filesystem
-                          Eigen3::Eigen
+                          #Eigen3::Eigen
                      )
 
 if( ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} AND BUILD_UNIT_TESTS)
