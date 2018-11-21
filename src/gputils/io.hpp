@@ -61,6 +61,9 @@ int ConvertGPASCII2Binary3DDataFile(const std::string& ifilename,
                                     const std::string& ofilename,
                                     ConvertMethod method = ConvertMethod::ReadThenWrite);
 
+int ConvertGPBinary2ASCII3DDataFile(const std::string& ifilename,
+                                    const std::string& ofilename);
+
 int FilterGPBinary3DDataFile(const std::string& ifilename,
                                    const std::string& ofilename,
                                    const std::string& every_spec);

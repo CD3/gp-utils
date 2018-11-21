@@ -602,6 +602,102 @@ TEST_CASE("File Input/Output", "[parsing]")
       fin.close();
 
     }
+
+    SECTION("3D Binary to ASCII Matrix")
+    {
+      float tmp;
+
+      ofstream out("test-3d-convert.bin", ios::out | ios::binary);
+
+      tmp = 3;   out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // number of y coordinates
+      tmp = 1.1; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // 1st y coord
+      tmp = 1.2; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // 2nd y coord
+      tmp = 1.3; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // 3rd y coord
+      tmp = 2.1; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // 1st x coord
+      tmp = 11.; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // f11
+      tmp = 12.; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // f12
+      tmp = 13.; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // f13
+      tmp = 2.2; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // 2nd x coord
+      tmp = 21.; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // f21
+      tmp = 22.; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // f22
+      tmp = 23.; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // f23
+      tmp = 2.3; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // 3rd x coord
+      tmp = 31.; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // f31
+      tmp = 32.; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // f32
+      tmp = 33.; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // f33
+      tmp = 2.4; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // 4th x coord
+      tmp = 41.; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // f41
+      tmp = 42.; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // f42
+      tmp = 43.; out.write(reinterpret_cast<char*>(&tmp), sizeof(float)); // f43
+      
+
+      out.close();
+
+      CHECK_THROWS(ConvertGPBinary2ASCII3DDataFile("missing.txt",
+                                                   "test-3d-convert.bin"));
+      ConvertGPBinary2ASCII3DDataFile("test-3d-convert.bin",
+                                      "test-3d-convert.txt");
+
+      ifstream fin;
+      fin.open("test-3d-convert.txt", ios::in | ios::binary);
+
+      fin >> tmp; CHECK( tmp == Approx(2.1) ) ;  // 1st x coord
+      fin >> tmp; CHECK( tmp == Approx(1.1) ) ;  // 1st y coord
+      fin >> tmp; CHECK( tmp == Approx(11) ) ;   // f11
+
+      fin >> tmp; CHECK( tmp == Approx(2.1) ) ;  // 1st x coord
+      fin >> tmp; CHECK( tmp == Approx(1.2) ) ;  // 2nd y coord
+      fin >> tmp; CHECK( tmp == Approx(12) ) ;   // f12
+
+      fin >> tmp; CHECK( tmp == Approx(2.1) ) ;  // 1st x coord
+      fin >> tmp; CHECK( tmp == Approx(1.3) ) ;  // 3rd y coord
+      fin >> tmp; CHECK( tmp == Approx(13) ) ;   // f13
+
+
+      fin >> tmp; CHECK( tmp == Approx(2.2) ) ;  // 2nd x coord
+      fin >> tmp; CHECK( tmp == Approx(1.1) ) ;  // 1st y coord
+      fin >> tmp; CHECK( tmp == Approx(21) ) ;   // f21
+
+      fin >> tmp; CHECK( tmp == Approx(2.2) ) ;
+      fin >> tmp; CHECK( tmp == Approx(1.2) ) ;
+      fin >> tmp; CHECK( tmp == Approx(22) ) ;
+
+      fin >> tmp; CHECK( tmp == Approx(2.2) ) ;
+      fin >> tmp; CHECK( tmp == Approx(1.3) ) ;
+      fin >> tmp; CHECK( tmp == Approx(23) ) ;
+
+
+      fin >> tmp; CHECK( tmp == Approx(2.3) ) ;  // 3rd x coord
+      fin >> tmp; CHECK( tmp == Approx(1.1) ) ;  // 1st y coord
+      fin >> tmp; CHECK( tmp == Approx(31) ) ;   // f31
+
+      fin >> tmp; CHECK( tmp == Approx(2.3) ) ;
+      fin >> tmp; CHECK( tmp == Approx(1.2) ) ;
+      fin >> tmp; CHECK( tmp == Approx(32) ) ;
+
+      fin >> tmp; CHECK( tmp == Approx(2.3) ) ;
+      fin >> tmp; CHECK( tmp == Approx(1.3) ) ;
+      fin >> tmp; CHECK( tmp == Approx(33) ) ;
+
+
+      fin >> tmp; CHECK( tmp == Approx(2.4) ) ;  // 4th x coord
+      fin >> tmp; CHECK( tmp == Approx(1.1) ) ;  // 1st y coord
+      fin >> tmp; CHECK( tmp == Approx(41) ) ;   // f41
+
+      fin >> tmp; CHECK( tmp == Approx(2.4) ) ;
+      fin >> tmp; CHECK( tmp == Approx(1.2) ) ;
+      fin >> tmp; CHECK( tmp == Approx(42) ) ;
+
+      fin >> tmp; CHECK( tmp == Approx(2.4) ) ;
+      fin >> tmp; CHECK( tmp == Approx(1.3) ) ;
+      fin >> tmp; CHECK( tmp == Approx(43) ) ;
+
+      CHECK( !(fin>>tmp) );
+      CHECK( fin.eof() );
+
+      fin.close();
+
+    }
   }
 }
 

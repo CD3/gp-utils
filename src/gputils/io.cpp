@@ -345,6 +345,24 @@ int ConvertGPASCII2Binary3DDataFile(const std::string& ifilename,
   return 1;
 }
 
+int ConvertGPBinary2ASCII3DDataFile(const std::string& ifilename,
+                                    const std::string& ofilename)
+{
+  if (!boost::filesystem::exists(ifilename)) {
+    throw std::runtime_error("No such file: " + ifilename);
+  }
+
+    // this method is simple, but it requires that
+    // there be enough memory to store the entire
+    // data set.
+    GP3DData data;
+
+    ReadGPBinary3DDataFile(ifilename, data);
+    WriteGPASCII3DDataFile(ofilename, data);
+
+    return 0;
+}
+
 int FilterGPBinary3DDataFile(const std::string& ifilename,
                              const std::string& ofilename,
                              const std::string& every_spec)
