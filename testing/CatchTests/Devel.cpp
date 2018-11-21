@@ -219,11 +219,11 @@ TEST_CASE("File Input/Output", "[parsing]")
     }
   }
 
-  SECTION("ASCII File Read Functions")
+  SECTION("File Read Functions")
   {
     ofstream out("test-3d.txt");
 
-    SECTION("Single space delimited")
+    SECTION("ASCII - Single space delimited")
     {
       out << 1 << " " << 10 << " " << 110 << "\n";
       out << 1 << " " << 20 << " " << 110 << "\n";
@@ -243,7 +243,7 @@ TEST_CASE("File Input/Output", "[parsing]")
       CHECK(data.f.size() == 6);
     }
 
-    SECTION("Tab delimited")
+    SECTION("ASCII - Tab delimited")
     {
       out << 1 << "\t" << 10 << "\t" << 110 << "\n";
       out << 1 << "\t" << 20 << "\t" << 110 << "\n";
@@ -307,6 +307,118 @@ TEST_CASE("File Input/Output", "[parsing]")
 
 
     }
+
+    SECTION("ASCII - Comments and Blank Lines")
+    {
+      out << "\n";
+      out << 1 << " " << 10 << " " << 110 << "\n";
+      out << 1 << " " << 20 << " " << 110 << "\n";
+      out << 1 << " " << 30 << " " << 110 << "\n";
+
+      out << "\n";
+      out << "# comment\n";
+      out << 2 << " " << 10 << " " << 210 << " # comment\n";
+      out << 2 << " " << 20 << " " << 210 << "\n";
+      out << 2 << " " << 30 << " " << 210 << "\n";
+
+      out.close();
+
+      GP3DData data;
+      ReadGPASCII3DDataFile("test-3d.txt", data);
+
+      REQUIRE(data.x.size() == 2);
+      REQUIRE(data.y.size() == 3);
+      REQUIRE(data.f.size() == 6);
+
+      CHECK(data.x[0] == Approx(1) );
+      CHECK(data.x[1] == Approx(2) );
+
+      CHECK(data.y[0] == Approx(10) );
+      CHECK(data.y[1] == Approx(20) );
+      CHECK(data.y[2] == Approx(30) );
+    }
+
+    SECTION("ASCII - Header")
+    {
+      out << "\n";
+      out << "# Comment\n";
+      out << "\n";
+      out << "# Comment\n";
+      out << "\n";
+      out << "# Comment\n";
+      out << "# Comment\n";
+      out << 1 << " " << 10 << " " << 110 << "\n";
+      out << 1 << " " << 20 << " " << 110 << "\n";
+      out << 1 << " " << 30 << " " << 110 << "\n";
+
+      out << "\n";
+      out << "# Comment\n";
+      out << "# Comment\n";
+      out << 2 << " " << 10 << " " << 210 << " # comment\n";
+      out << 2 << " " << 20 << " " << 210 << "\n";
+      out << 2 << " " << 30 << " " << 210 << "\n";
+
+      out.close();
+
+      GP3DData data;
+      ReadGPASCII3DDataFile("test-3d.txt", data);
+
+      REQUIRE(data.x.size() == 2);
+      REQUIRE(data.y.size() == 3);
+      REQUIRE(data.f.size() == 6);
+
+      CHECK(data.x[0] == Approx(1) );
+      CHECK(data.x[1] == Approx(2) );
+
+      CHECK(data.y[0] == Approx(10) );
+      CHECK(data.y[1] == Approx(20) );
+      CHECK(data.y[2] == Approx(30) );
+    }
+
+    SECTION("Binary Datafile Info")
+    {
+      GP3DData data;
+
+      data.x.push_back(1.1);
+      data.x.push_back(1.2);
+      data.x.push_back(1.3);
+
+      data.y.push_back(2.1);
+      data.y.push_back(2.2);
+      data.y.push_back(2.3);
+      data.y.push_back(2.4);
+
+      data.f.push_back(10);
+      data.f.push_back(11);
+      data.f.push_back(12);
+      data.f.push_back(13);
+
+      data.f.push_back(20);
+      data.f.push_back(21);
+      data.f.push_back(22);
+      data.f.push_back(23);
+
+      data.f.push_back(30);
+      data.f.push_back(31);
+      data.f.push_back(32);
+      data.f.push_back(33);
+
+
+      WriteGPBinary3DDataFile("test-3d.bin", data);
+
+      GP3DDataInfo info;
+
+      QueryGPBinary3DDataFile("test-3d.bin", info);
+
+      CHECK( info.Nx ); CHECK(info.Nx.get() == 3);
+      CHECK( info.Ny ); CHECK(info.Ny.get() == 4);
+      CHECK( info.xmin); CHECK(info.xmin.get() == Approx(1.1) );
+      CHECK( info.xmax); CHECK(info.xmax.get() == Approx(1.3) );
+      CHECK( info.ymin); CHECK(info.ymin.get() == Approx(2.1) );
+      CHECK( info.ymax); CHECK(info.ymax.get() == Approx(2.4) );
+
+    }
+
   }
 
 

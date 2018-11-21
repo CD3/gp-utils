@@ -10,7 +10,9 @@
 using namespace std;
 namespace po = boost::program_options;
 
-void print_manual() {}
+void print_manual() {
+std::cout << "Convert gnuplot ASCII data file to binary.\n";
+}
 
 int main(int argc, char *argv[])
 {

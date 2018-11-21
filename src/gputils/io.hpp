@@ -54,6 +54,8 @@ int ReadGPBinary3DDataFile(const std::string& filename, GP3DData& data);
 int WriteGPBinary3DDataFile(const std::string& filename, const GP3DData& data);
 int WriteGPASCII3DDataFile(const std::string& filename, const GP3DData& data);
 
+int QueryGPBinary3DDataFile(const std::string& filename, GP3DDataInfo& info);
+
 enum class ConvertMethod { ReadThenWrite, SimultaneousReadWrite };
 int ConvertGPASCII2Binary3DDataFile(const std::string& ifilename,
                                     const std::string& ofilename,

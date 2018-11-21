@@ -11,7 +11,7 @@ using namespace std;
 namespace po = boost::program_options;
 
 void print_manual() {
-std::cout << "Extract sub-blocks of data from gnuplot binary datafiles.\n";
+std::cout << "Display information about gnuplot binary datafiles.\n";
 }
 
 int main(int argc, char *argv[])
@@ -24,9 +24,6 @@ int main(int argc, char *argv[])
     ("version",   "print library version.")
     ("manual",    "print manual.")
     ("verbose,v"  , po::value<int>()->implicit_value(0)          , "verbose level.") // an option that takes an argument, but has a default value.
-    ("output,o"   , po::value<string>(), "file to write output to.")
-    ("every,e"   , po::value<string>()->default_value(""), "gnuplot 'every' string to apply.")
-    ("overwrite,x", "overwrite existing output files.")
     ;
   // clang-format on
 
@@ -83,12 +80,7 @@ int main(int argc, char *argv[])
   }
 
   string ifn = vm["datafile"].as<string>();
-  string ofn = boost::filesystem::change_extension(ifn,".extracted.bin").string();
 
-  if( vm.count("output") > 0 )
-  {
-    ofn = vm["output"].as<string>();
-  }
 
   if( !boost::filesystem::exists(ifn) )
   {
@@ -96,14 +88,25 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  if( boost::filesystem::exists(ofn) && vm.count("overwrite") < 1 )
-  {
-    cerr << "ERROR: output file '"<<ofn<<"' exists. Use -x to overwrite.\n";
-    return 1;
-  }
 
 
-  FilterGPBinary3DDataFile(ifn,ofn,vm["every"].as<string>());
+  GP3DDataInfo info;
+  QueryGPBinary3DDataFile(ifn,info);
+
+  std::cout << "File Summary:\n";
+  std::cout << "\t" << "Name: "<< ifn << "\n";
+  std::cout << "\t" << "Size:\n";
+  std::cout << "\t\t" << "Bytes: " << info.size_in_bytes << "\n";
+  std::cout << "\t\t" << "Floats: " << info.size_in_bytes.get()/sizeof(float) << "\n";
+  std::cout << "\t\t" << "Function Values: " << info.Nx.get()*info.Ny.get() << "\n";
+  std::cout << "\t" << "X:\n";
+  std::cout << "\t\t" << "N:" << info.Nx << "\n";
+  std::cout << "\t\t" << "Min:" << info.xmin << "\n";
+  std::cout << "\t\t" << "Max:" << info.xmax << "\n";
+  std::cout << "\t" << "Y:\n";
+  std::cout << "\t\t" << "N:" << info.Ny << "\n";
+  std::cout << "\t\t" << "Min:" << info.ymin << "\n";
+  std::cout << "\t\t" << "Max:" << info.ymax << "\n";
   
 
 

@@ -7,6 +7,7 @@
  */
 
 #include <boost/optional.hpp>
+#include <boost/none.hpp>
 #include <boost/optional/optional_io.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <iterator>
@@ -34,6 +35,31 @@ struct GP3DData {
     f.clear();
   }
 };
+
+struct GP3DDataInfo {
+  boost::optional<size_t> Nx;
+  boost::optional<size_t> Ny;
+
+  boost::optional<float> xmin;
+  boost::optional<float> xmax;
+
+  boost::optional<float> ymin;
+  boost::optional<float> ymax;
+
+  boost::optional<size_t> size_in_bytes;
+
+  void clear()
+  {
+    Nx = boost::none;
+    xmin = boost::none;
+    xmax = boost::none;
+    Ny = boost::none;
+    ymin = boost::none;
+    ymax = boost::none;
+    size_in_bytes = boost::none;
+  }
+};
+
 
 struct GP3DDataEverySpec {
   GP3DDataEverySpec(std::string spec)

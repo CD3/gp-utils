@@ -1,10 +1,10 @@
 #include "./io.hpp"
 
 
-int ReadGPASCII3DDataFile(const std::string& filename, GP3DData& data)
+int ReadGPASCII3DDataFile(const std::string& ifilename, GP3DData& data)
 {
-  if (!boost::filesystem::exists(filename)) {
-    throw std::runtime_error("No such file: " + filename);
+  if (!boost::filesystem::exists(ifilename)) {
+    throw std::runtime_error("No such file: " + ifilename);
   }
 
   std::ifstream fin;
@@ -17,7 +17,7 @@ int ReadGPASCII3DDataFile(const std::string& filename, GP3DData& data)
   data.y.clear();
   data.f.clear();
 
-  fin.open(filename.c_str());
+  fin.open(ifilename.c_str());
   BOOST_SCOPE_EXIT(&fin) { fin.close(); }
   BOOST_SCOPE_EXIT_END
 
@@ -62,13 +62,13 @@ int ReadGPASCII3DDataFile(const std::string& filename, GP3DData& data)
 }
 
 
-int ReadGPBinary3DDataFile(const std::string& filename, GP3DData& data)
+int ReadGPBinary3DDataFile(const std::string& ifilename, GP3DData& data)
 {
-  if (!boost::filesystem::exists(filename)) {
-    throw std::runtime_error("No such file: " + filename);
+  if (!boost::filesystem::exists(ifilename)) {
+    throw std::runtime_error("No such file: " + ifilename);
   }
   // get size of file so we can compute how many elements it holds
-  auto fs = boost::filesystem::file_size(filename);
+  auto fs = boost::filesystem::file_size(ifilename);
   size_t N = fs/sizeof(float);
   std::ifstream fin;
 
@@ -76,7 +76,7 @@ int ReadGPBinary3DDataFile(const std::string& filename, GP3DData& data)
   data.y.clear();
   data.f.clear();
 
-  fin.open(filename.c_str(), std::ios::in | std::ios::binary);
+  fin.open(ifilename.c_str(), std::ios::in | std::ios::binary);
   BOOST_SCOPE_EXIT(&fin) { fin.close(); }
   BOOST_SCOPE_EXIT_END
 
@@ -110,12 +110,71 @@ int ReadGPBinary3DDataFile(const std::string& filename, GP3DData& data)
   return 0;
 }
 
+int QueryGPBinary3DDataFile(const std::string& ifilename, GP3DDataInfo& info)
+{
+  if (!boost::filesystem::exists(ifilename)) {
+    throw std::runtime_error("No such file: " + ifilename);
+  }
+  info.clear();
 
-int WriteGPBinary3DDataFile(const std::string& filename, const GP3DData& data)
+  auto fs = boost::filesystem::file_size(ifilename);
+  size_t N = fs/sizeof(float);
+  float tmp;
+
+  info.size_in_bytes = fs;
+
+  std::ifstream fin;
+
+  fin.open(ifilename.c_str(), std::ios::in | std::ios::binary);
+  BOOST_SCOPE_EXIT(&fin) { fin.close(); }
+  BOOST_SCOPE_EXIT_END
+
+
+  fin.read(reinterpret_cast<char*>(&tmp),sizeof(float));
+  
+  info.Ny = tmp;
+  info.Nx = (N - 1 - info.Ny.get())/(1 + info.Ny.get());
+
+  fin.read(reinterpret_cast<char*>(&tmp),sizeof(float));
+  info.ymin = tmp;
+
+  if( info.Ny.get() > 1 )
+  {
+    fin.ignore((info.Ny.get()-2)*sizeof(float));
+    fin.read(reinterpret_cast<char*>(&tmp),sizeof(float));
+    info.ymax = tmp;
+  }
+  else
+  {
+    info.ymax = info.ymin.get();
+  }
+
+  fin.read(reinterpret_cast<char*>(&tmp),sizeof(float));
+  info.xmin = tmp;
+
+  if( info.Nx.get() > 1)
+  {
+    fin.ignore((info.Ny.get())*sizeof(float));
+    if( info.Nx.get() > 2 )
+    {
+      fin.ignore(((info.Ny.get()+1)*(info.Nx.get()-2))*sizeof(float));
+    }
+    fin.read(reinterpret_cast<char*>(&tmp),sizeof(float));
+    info.xmax = tmp;
+  }
+  else
+  {
+  info.xmax = info.xmin.get();
+  }
+
+}
+
+
+int WriteGPBinary3DDataFile(const std::string& ofilename, const GP3DData& data)
 {
   std::ofstream fout;
 
-  fout.open(filename.c_str(), std::ios::out | std::ios::binary);
+  fout.open(ofilename.c_str(), std::ios::out | std::ios::binary);
   BOOST_SCOPE_EXIT(&fout) { fout.close(); }
   BOOST_SCOPE_EXIT_END
 
@@ -134,11 +193,11 @@ int WriteGPBinary3DDataFile(const std::string& filename, const GP3DData& data)
   return 0;
 }
 
-int WriteGPASCII3DDataFile(const std::string& filename, const GP3DData& data)
+int WriteGPASCII3DDataFile(const std::string& ofilename, const GP3DData& data)
 {
   std::ofstream fout;
 
-  fout.open(filename.c_str(), std::ios::out);
+  fout.open(ofilename.c_str(), std::ios::out);
   BOOST_SCOPE_EXIT(&fout) { fout.close(); }
   BOOST_SCOPE_EXIT_END
 
@@ -325,8 +384,18 @@ int FilterGPBinary3DDataFile(const std::string& ifilename,
     size_t ys,xs, ye, xe, newNx, newNy;
     ys = slice.y_start.get_value_or(0);
     xs = slice.x_start.get_value_or(0);
-    ye = slice.y_end.get_value_or(Ny);
-    xe = slice.x_end.get_value_or(Nx);
+    ye = slice.y_end.get_value_or(Ny-1);
+    xe = slice.x_end.get_value_or(Nx-2);
+
+    if(ys >= Ny)
+      ys = Ny-1;
+    if(ye >= Ny)
+      ye = Ny-1;
+
+    if(xs >= Nx)
+      xs = Nx-1;
+    if(xe >= Nx)
+      xe = Nx-1;
 
     if( slice.y_inc || slice.x_inc )
       throw std::runtime_error("FilterGPBinary3DDataFile does not support y or x increments yet. Spec string:"+every_spec);
