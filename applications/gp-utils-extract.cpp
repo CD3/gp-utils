@@ -1,6 +1,6 @@
-
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/filesystem/convenience.hpp>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     ("manual",    "print manual.")
     ("verbose,v"  , po::value<int>()->implicit_value(0)          , "verbose level.") // an option that takes an argument, but has a default value.
     ("output,o"   , po::value<string>(), "file to write output to.")
-    ("memory-efficient,m", "use memory efficient method. required if dataset cannot fit into memory at once.")
+    ("every,e"   , po::value<string>()->default_value(""), "gnuplot 'every' string to apply.")
     ("overwrite,x", "overwrite existing output files.")
     ;
   // clang-format on
@@ -81,7 +81,8 @@ int main(int argc, char *argv[])
   }
 
   string ifn = vm["datafile"].as<string>();
-  string ofn = boost::filesystem::change_extension(ifn,".bin").string();
+  string ofn = boost::filesystem::change_extension(ifn,"-extracted.bin").string();
+
   if( vm.count("output") > 0 )
   {
     ofn = vm["output"].as<string>();
@@ -100,14 +101,9 @@ int main(int argc, char *argv[])
   }
 
 
-  if( vm.count("memory-efficient") )
-  {
-  ConvertGPASCII2Binary3DDataFile(ifn,ofn, ConvertMethod::SimultaneousReadWrite);
-  }
-  else
-  {
-  ConvertGPASCII2Binary3DDataFile(ifn,ofn, ConvertMethod::ReadThenWrite);
-  }
+  FilterGPBinary3DDataFile(ifn,ofn,vm["every"].as<string>());
+  
+
 
 
   return 0;
