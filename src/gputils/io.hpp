@@ -59,4 +59,7 @@ int ConvertGPASCII2Binary3DDataFile(const std::string& ifilename,
                                     const std::string& ofilename,
                                     ConvertMethod method = ConvertMethod::ReadThenWrite);
 
+int FilterGPBinary3DDataFile(const std::string& ifilename,
+                                   const std::string& ofilename,
+                                   const std::string& every_spec);
 #endif  // include protector

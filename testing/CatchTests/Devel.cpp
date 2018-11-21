@@ -493,6 +493,118 @@ TEST_CASE("File Input/Output", "[parsing]")
   }
 }
 
+TEST_CASE("File Filtering")
+{
+  SECTION("Every Spec Parser")
+  {
+    // clang-format off
+    GP3DDataEverySpec spec("1:2:3:4:5:6");
+    CHECK( spec.y_inc  );   CHECK( spec.y_inc.get()   == 1 );
+    CHECK( spec.x_inc  );   CHECK( spec.x_inc.get()   == 2 );
+    CHECK( spec.y_start  ); CHECK( spec.y_start.get() == 3 );
+    CHECK( spec.x_start  ); CHECK( spec.x_start.get() == 4 );
+    CHECK( spec.y_end  );   CHECK( spec.y_end.get()   == 5 );
+    CHECK( spec.x_end  );   CHECK( spec.x_end.get()   == 6 );
+
+
+    spec = GP3DDataEverySpec(":1:2:3:4:5");
+    CHECK(!spec.y_inc  );
+    CHECK( spec.x_inc  );   CHECK( spec.x_inc.get()   == 1 );
+    CHECK( spec.y_start  ); CHECK( spec.y_start.get() == 2 );
+    CHECK( spec.x_start  ); CHECK( spec.x_start.get() == 3 );
+    CHECK( spec.y_end  );   CHECK( spec.y_end.get()   == 4 );
+    CHECK( spec.x_end  );   CHECK( spec.x_end.get()   == 5 );
+
+    spec = GP3DDataEverySpec("::1:2:3:4");
+    CHECK(!spec.y_inc  );
+    CHECK(!spec.x_inc  ); 
+    CHECK( spec.y_start  ); CHECK( spec.y_start.get() == 1 );
+    CHECK( spec.x_start  ); CHECK( spec.x_start.get() == 2 );
+    CHECK( spec.y_end  );   CHECK( spec.y_end.get()   == 3 );
+    CHECK( spec.x_end  );   CHECK( spec.x_end.get()   == 4 );
+
+    spec = GP3DDataEverySpec("::1::2");
+    CHECK(!spec.y_inc  );
+    CHECK(!spec.x_inc  ); 
+    CHECK( spec.y_start  ); CHECK( spec.y_start.get() == 1 );
+    CHECK(!spec.x_start  );
+    CHECK( spec.y_end  );   CHECK( spec.y_end.get()   == 2 );
+    CHECK(!spec.x_end  );
+
+    spec = GP3DDataEverySpec("::1::2:");
+    CHECK(!spec.y_inc  );
+    CHECK(!spec.x_inc  ); 
+    CHECK( spec.y_start  ); CHECK( spec.y_start.get() == 1 );
+    CHECK(!spec.x_start  );
+    CHECK( spec.y_end  );   CHECK( spec.y_end.get()   == 2 );
+    CHECK(!spec.x_end  );
+
+    spec = GP3DDataEverySpec(":::1::2");
+    CHECK(!spec.y_inc  );
+    CHECK(!spec.x_inc  );
+    CHECK(!spec.y_start  );
+    CHECK( spec.x_start  ); CHECK( spec.x_start.get() == 1 );
+    CHECK(!spec.y_end  );
+    CHECK( spec.x_end  );   CHECK( spec.x_end.get()   == 2 );
+
+    spec = GP3DDataEverySpec("1:2::::");
+    CHECK( spec.y_inc  );   CHECK( spec.y_inc.get()   == 1 );
+    CHECK( spec.x_inc  );   CHECK( spec.x_inc.get()   == 2 );
+    CHECK(!spec.y_start  );
+    CHECK(!spec.x_start  );
+    CHECK(!spec.y_end  );
+    CHECK(!spec.x_end  );
+    // clang-format on
+  }
+
+  SECTION("Block Extraction")
+  {
+    GP3DData idata,odata;
+    idata.x.resize(10);
+    idata.y.resize(20);
+    idata.f.resize(10*20);
+
+    double dx = 0.1;
+    double xmin = 0.0;
+    double dy = 0.1;
+    double ymin = 10;
+    for( int i = 0; i < idata.x.size(); ++i )
+      idata.x[i] = xmin+dx*i;
+    for( int j = 0; j < idata.y.size(); ++j )
+      idata.y[j] = ymin+dy*j;
+    for( int i = 0; i < idata.x.size(); ++i )
+    {
+      for( int j = 0; j < idata.y.size(); ++j )
+        idata.f[i*idata.y.size() + j] = sin(idata.x[i])*cos(idata.y[j]);
+    }
+
+
+
+    WriteGPBinary3DDataFile("test-large-3d.bin", idata);
+    FilterGPBinary3DDataFile("test-large-3d.bin", "test-small-3d.bin", "::4:2:12:5");
+    ReadGPBinary3DDataFile("test-small-3d.bin", odata);
+
+    for(int j = 4; j <= 12; ++j)
+    {
+      CHECK(odata.y[j-4] == Approx(idata.y[j]));
+    }
+
+    for(int i = 2; i <= 5; ++i)
+    {
+      CHECK(odata.x[i-2] == Approx(idata.x[i]));
+    }
+    
+    for(int i = 2; i <= 5; ++i)
+    {
+    for(int j = 4; j <= 12; ++j)
+      CHECK(odata.f[(i-2)*odata.y.size() + (j-4)] == Approx(idata.f[i*idata.y.size() + j]));
+    }
+
+
+
+  }
+}
+
 TEST_CASE("Performance Benchmarks", "[!hide][benchmarks]")
 {
       SECTION("3D ASCII vs Binary Writer")

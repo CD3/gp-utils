@@ -285,3 +285,86 @@ int ConvertGPASCII2Binary3DDataFile(const std::string& ifilename,
 
   return 1;
 }
+
+int FilterGPBinary3DDataFile(const std::string& ifilename,
+                             const std::string& ofilename,
+                             const std::string& every_spec)
+{
+  if (!boost::filesystem::exists(ifilename)) {
+    throw std::runtime_error("No such file: " + ifilename);
+  }
+
+    std::ifstream fin;
+    std::ofstream fout;
+
+
+    fin.open(ifilename.c_str(), std::ios::in | std::ios::binary);
+    fout.open(ofilename.c_str(), std::ios::out | std::ios::binary);
+    BOOST_SCOPE_EXIT(&fin, &fout)
+    {
+      fin.close();
+      fout.close();
+    }
+    BOOST_SCOPE_EXIT_END
+
+    size_t N, Nx, Ny;
+    float tmp;
+    std::vector<float> buffer;
+
+    // get size of file so we can compute how many elements it holds
+    auto fs = boost::filesystem::file_size(ifilename);
+    N = fs/sizeof(float);
+
+    fin.read(reinterpret_cast<char*>(&tmp),sizeof(float));
+    Ny = tmp;
+    Nx = (N - 1 - Ny)/(1 + Ny);
+
+
+    GP3DDataEverySpec slice(every_spec);
+
+    size_t ys,xs, ye, xe, newNx, newNy;
+    ys = slice.y_start.get_value_or(0);
+    xs = slice.x_start.get_value_or(0);
+    ye = slice.y_end.get_value_or(Ny);
+    xe = slice.x_end.get_value_or(Nx);
+
+    if( slice.y_inc || slice.x_inc )
+      throw std::runtime_error("FilterGPBinary3DDataFile does not support y or x increments yet. Spec string:"+every_spec);
+
+    if( ye < ys )
+      throw std::runtime_error("FilterGPBinary3DDataFile: y (point) end cannot be less than start. Spec string: "+every_spec);
+
+    if( xe < xs )
+      throw std::runtime_error("FilterGPBinary3DDataFile: x (block) end cannot be less than start. Spec string: "+every_spec);
+
+
+    // ys is *inclusive*
+    newNy = ye - ys + 1;
+    newNx = xe - xs + 1;
+
+    buffer.resize(1+newNy);
+
+    // first line with y coordinates
+    buffer[0] = newNy;
+    fin.ignore( ys*sizeof(float) );  // skip to first y coordinate in slice
+    fin.read(reinterpret_cast<char*>(buffer.data()+1), newNy*sizeof(float) ); // read new y coordinates
+    fin.ignore((Ny - ye - 1)*sizeof(float));  // skip to next line
+    fout.write( reinterpret_cast<char*>(buffer.data()), buffer.size()*sizeof(float) );
+
+    
+    fin.ignore( xs*(Ny+1)*sizeof(float) );  // skip to first x coordinate in slice
+    for(int i = 0; i < newNx; ++i)
+    {
+      fin.read(reinterpret_cast<char*>(buffer.data()), sizeof(float) ); // read x coordinate
+      fin.ignore( ys*sizeof(float) );  // skip to first y coordinate in slice
+      fin.read(reinterpret_cast<char*>(buffer.data()+1), newNy*sizeof(float) ); // read new function values
+      fin.ignore((Ny - ye - 1)*sizeof(float));  // skip to next line
+      fout.write( reinterpret_cast<char*>(buffer.data()), buffer.size()*sizeof(float) );
+    }
+
+
+
+
+
+  return 0;
+}
