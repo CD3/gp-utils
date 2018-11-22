@@ -9,10 +9,6 @@
 using namespace std;
 namespace po = boost::program_options;
 
-void print_manual() {
-std::cout << "Convert gnuplot ASCII data file to binary.\n";
-}
-
 int main(int argc, char *argv[])
 {
   // clang-format off
@@ -20,9 +16,8 @@ int main(int argc, char *argv[])
   opt_options.add_options()
     // these are simple flag options, they do not have an argument.
     ("help,h",    "print help message.")
-    ("version",   "print library version.")
-    ("manual",    "print manual.")
-    ("verbose,v"  , po::value<int>()->implicit_value(0)          , "verbose level.") // an option that takes an argument, but has a default value.
+    //("version",   "print library version.")
+    //("verbose,v"  , po::value<int>()->implicit_value(0)          , "verbose level.") // an option that takes an argument, but has a default value.
     ("output,o"   , po::value<string>(), "file to write output to.")
     //("memory-efficient,m", "use memory efficient method. required if dataset cannot fit into memory at once.")
     ("overwrite,x", "overwrite existing output files.")
@@ -31,8 +26,7 @@ int main(int argc, char *argv[])
 
   // now define our arguments.
   po::options_description arg_options("Arguments");
-  arg_options.add_options()("datafile,f",
-                            po::value<string>()->default_value("-"),
+  arg_options.add_options()("datafile",
                             "data file to convert.");
 
   // combine the options and arguments into one option list.
@@ -58,20 +52,43 @@ int main(int argc, char *argv[])
   // -----------------------------------
 
   if (argc == 1 || vm.count("help")) {
-    // print out a usage statement and summary of command line options
-    cout << "gp-utils-ascii2bin [options] <file>"
-         << "\n\n";
+    cout << "gp-utils-bin2ascii [options] <datafile>";
+    cout << "\n\n";
     cout << opt_options << "\n";
-    return 0;
-  }
+    cout << "Arguments:\n";
+    cout << "  <datafile>      the datafile to convert.\n";
+    cout << "\n\n";
+    cout << R"EOF(
+Converts a Gnuplot binary matrix datafile (see http://gnuplot.sourceforge.net/docs_4.2/node330.html) to ASCII (plain text).
+Only 3 column files with regularly coordinates are supported (i.e. only files that can be plotted with `splot` with
+a mesh.
 
-  if (vm.count("manual")) {
-    // print the manual
-    print_manual();
-    // print out a usage statement and summary of command line options
-    cout << "gp-utils-ascii2bin [options] <file>"
-         << "\n\n";
-    cout << opt_options << "\n";
+NOTE: Gnuplot the x-y coordinates in its binary matrix file format between
+versions 4 and 5. The gp-utils tools ASSUME THE VERSION 4 FORMAT. This means
+that you will need to swap the x and y axes when using splot if you are using
+Gnuplot version 5. See page 196 of http://www.gnuplot.info/docs_5.2/Gnuplot_5.2.pdf
+and http://gnuplot.sourceforge.net/docs_4.2/node330.html.
+
+  > splot 'ascii-datafile.txt', 'binary-datafile.bin' using 2:1:3
+
+Examples:
+
+  Convert binary matrix data file named 'data.bin' to a 3 column ASCII data file named 'data.txt'.
+    
+    $ gp-utils-bin2ascii data.bin
+
+  By default, gp-utils-bin2ascii won't overwrite the output file if it exists. Use the -x option to override this.
+  Convert binary matrix data file named 'data.bin' to a 3 column ASCII data file named 'data.txt', overwriting it if
+  it already exists.
+
+    $ gp-utils-bin2ascii -x data.bin
+
+  Convert binary matrix data file named 'data.bin' to a 3 column ASCII data file named 'plain-text-data.txt', overwriting it if
+  it already exists.
+
+    $ gp-utils-bin2ascii -x -o plain-text-data.bin data.bin
+
+)EOF";
     return 0;
   }
 

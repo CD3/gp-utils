@@ -21,9 +21,9 @@ int main(int argc, char *argv[])
   opt_options.add_options()
     // these are simple flag options, they do not have an argument.
     ("help,h",    "print help message.")
-    ("version",   "print library version.")
-    ("manual",    "print manual.")
-    ("verbose,v"  , po::value<int>()->implicit_value(0)          , "verbose level.") // an option that takes an argument, but has a default value.
+    //("version",   "print library version.")
+    //("manual",    "print manual.")
+    //("verbose,v"  , po::value<int>()->implicit_value(0)          , "verbose level.") // an option that takes an argument, but has a default value.
     ("output,o"   , po::value<string>(), "file to write output to.")
     ("every,e"   , po::value<string>()->default_value(""), "gnuplot 'every' string to apply.")
     ("overwrite,x", "overwrite existing output files.")
@@ -32,9 +32,8 @@ int main(int argc, char *argv[])
 
   // now define our arguments.
   po::options_description arg_options("Arguments");
-  arg_options.add_options()("datafile,f",
-                            po::value<string>()->default_value("-"),
-                            "data file to convert.");
+  arg_options.add_options()("datafile",
+                            "data file to extract from.");
 
   // combine the options and arguments into one option list.
   // this is what we will use to parse the command line, but
@@ -59,28 +58,50 @@ int main(int argc, char *argv[])
   // -----------------------------------
 
   if (argc == 1 || vm.count("help")) {
-    // print out a usage statement and summary of command line options
-    cout << "gp-utils-ascii2bin [options] <file>"
-         << "\n\n";
+    cout << "gp-utils-extract [options] <datafile>";
+    cout << "\n\n";
     cout << opt_options << "\n";
+    cout << "Arguments:\n";
+    cout << "  <datafile>      the datafile to read.\n";
+    cout << "\n\n";
+    cout << R"EOF(
+
+Extracts a sub-block of data from a Gnuplot binary matrix data file (see http://gnuplot.sourceforge.net/docs_4.2/node330.html).
+The sub-block to extract is specified using Gnuplot's every option syntax (i.e. ::10:5:20:10), but point and block increments
+are currently NOT SUPPORTED. So, it is only possible to extract continuous data blocks.
+
+NOTE: Gnuplot the x-y coordinates in its binary matrix file format between
+versions 4 and 5. The gp-utils tools ASSUME THE VERSION 4 FORMAT. This means
+that you will need to swap the x and y axes when using splot if you are using
+Gnuplot version 5. See page 196 of http://www.gnuplot.info/docs_5.2/Gnuplot_5.2.pdf
+and http://gnuplot.sourceforge.net/docs_4.2/node330.html.
+
+  > splot 'ascii-datafile.txt', 'binary-datafile.bin' using 2:1:3
+
+However, Gnuplot's the every option syntax is based on ASCII file format, which assumes
+consecutive points in a block have different y coordinates with the same x coordinate.
+So Gnuplot's start_point and stop_point correspond to y coordinates, and start_block and
+stop_block correspond to x coordinates. See http://gnuplot.sourceforge.net/docs_4.2/node121.html
+for documentation on the every option.
+
+Examples:
+
+  Extract all points from the 5'th to 10'th x coordinates (inclusive) from a binary data file
+  named 'data.bin' and write a new binary data file named 'data.extracted.bin':
+
+  > gp-utils-extract -e :::5::10 data.bin
+
+  Extract all points from the 5'th to 10'th x coordinates (inclusive), and the
+  3rd to 8th y coordinates from a binary data file named 'data.bin' and write a
+  new binary data file named 'data.extracted.bin', overwriting if it already
+  exists:
+
+  > gp-utils-extract -x -e :::5:3:10:8 data.bin
+
+)EOF";
     return 0;
   }
 
-  if (vm.count("manual")) {
-    // print the manual
-    print_manual();
-    // print out a usage statement and summary of command line options
-    cout << "gp-utils-ascii2bin [options] <file>"
-         << "\n\n";
-    cout << opt_options << "\n";
-    return 0;
-  }
-
-  if (vm.count("version")) {
-    // print the version number for the library
-    cout << "No version information" << endl;
-    return 0;
-  }
 
   string ifn = vm["datafile"].as<string>();
   string ofn = boost::filesystem::change_extension(ifn,".extracted.bin").string();
