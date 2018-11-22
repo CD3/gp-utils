@@ -67,8 +67,8 @@ int main(int argc, char *argv[])
     cout << R"EOF(
 
 Extracts a sub-block of data from a Gnuplot binary matrix data file (see http://gnuplot.sourceforge.net/docs_4.2/node330.html).
-The sub-block to extract is specified using Gnuplot's every option syntax (i.e. ::10:5:20:10), but point and block increments
-are currently NOT SUPPORTED. So, it is only possible to extract continuous data blocks.
+The sub-block to extract is specified using Gnuplot's every option syntax (i.e. ::10:5:20:10).
+See http://gnuplot.sourceforge.net/docs_4.2/node121.html
 
 NOTE: Gnuplot the x-y coordinates in its binary matrix file format between
 versions 4 and 5. The gp-utils tools ASSUME THE VERSION 4 FORMAT. This means
