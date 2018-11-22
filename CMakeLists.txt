@@ -5,6 +5,7 @@ if( TARGET gp-utils )
 endif( TARGET gp-utils )
 
 OPTION( BUILD_UNIT_TESTS "Build unit tests for the library" ON )
+OPTION( INSTALL_LIBRARY "Build and install library and header files." ON )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
@@ -55,6 +56,8 @@ endif()
 
 
 
+
+if( INSTALL_LIBRARY )
 
 # Install and Packaging
 install( TARGETS ${LIB_NAME} EXPORT ${PROJECT_NAME}Targets
@@ -114,5 +117,6 @@ if( ${PROJECT_NAME}_VERSION_PATCH)
 endif()
 INCLUDE(CPack)
 
+endif()
 
 

@@ -22,11 +22,11 @@ endforeach()
 foreach(appSrc ${application_SOURCES})
 	get_filename_component(appName ${appSrc} NAME_WE)
 	add_executable( ${appName} ${appSrc} )
+  install( TARGETS ${appName} DESTINATION bin )
 
 	target_link_libraries( ${appName} 
 	PUBLIC
 		gp-utils::gp-utils
-		Boost::boost
 		Boost::program_options
 		)
 
