@@ -32,11 +32,8 @@ target_sources(
 ${LIB_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/gputils/io.cpp>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/gputils/transformations.cpp>
   INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/gputils/io.hpp>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/gputils/structs.hpp>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/gputils/transformations.hpp>
 )
 target_include_directories( ${LIB_NAME} INTERFACE
   $<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}/src>

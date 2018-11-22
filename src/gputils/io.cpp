@@ -1,4 +1,13 @@
+
+#include <fstream>
+#include <iomanip>
+
+#include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/scope_exit.hpp>
+
 #include "./io.hpp"
+#include "./transformations.hpp"
 
 
 int ReadGPASCII3DDataFile(const std::string& ifilename, GP3DData& data)
@@ -365,12 +374,23 @@ int ConvertGPBinary2ASCII3DDataFile(const std::string& ifilename,
 
 int FilterGPBinary3DDataFile(const std::string& ifilename,
                              const std::string& ofilename,
-                             const std::string& every_spec)
+                             const std::string& every_spec,
+                             FilterMethod method)
 {
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
   }
 
+  if( method == FilterMethod::ReadThenWrite)
+  {
+    GP3DData idata,odata;
+    ReadGPBinary3DDataFile(ifilename,idata);
+    FilterGP3DData(idata,odata,every_spec);
+    WriteGPBinary3DDataFile(ofilename,odata);
+  }
+
+  if( method == FilterMethod::SimultaneousReadWrite)
+  {
     std::ifstream fin;
     std::ofstream fout;
 
@@ -403,7 +423,7 @@ int FilterGPBinary3DDataFile(const std::string& ifilename,
     ys = slice.y_start.get_value_or(0);
     xs = slice.x_start.get_value_or(0);
     ye = slice.y_end.get_value_or(Ny-1);
-    xe = slice.x_end.get_value_or(Nx-2);
+    xe = slice.x_end.get_value_or(Nx-1);
 
     if(ys >= Ny)
       ys = Ny-1;
@@ -451,7 +471,9 @@ int FilterGPBinary3DDataFile(const std::string& ifilename,
 
 
 
-
-
   return 0;
+  }
+
+
+  return 1;
 }

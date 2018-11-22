@@ -5,7 +5,10 @@
 #include <iomanip>
 #include <iostream>
 
+#include <boost/filesystem.hpp>
+
 #include "gputils/io.hpp"
+#include "gputils/transformations.hpp"
 
 using namespace std;
 
@@ -788,6 +791,10 @@ TEST_CASE("File Filtering")
 
 
 
+    if( boost::filesystem::exists("test-small-3d.bin"))
+    {
+      boost::filesystem::remove("test-small-3d.bin");
+    }
     WriteGPBinary3DDataFile("test-large-3d.bin", idata);
     FilterGPBinary3DDataFile("test-large-3d.bin", "test-small-3d.bin", "::4:2:12:5");
     ReadGPBinary3DDataFile("test-small-3d.bin", odata);
@@ -931,4 +938,49 @@ TEST_CASE("Performance Benchmarks", "[!hide][benchmarks]")
                   << result.speedup_over_minimum << "\n";
         std::cout << std::endl;
       }
+}
+
+TEST_CASE("Data Transformations")
+{
+  SECTION("Filter (Gnuplot Every)")
+  {
+    GP3DData idata, odata;
+    double dx = 0.1;
+    double dy = 0.2;
+
+    for(int i = 0; i < 100; ++i)
+    {
+      idata.x.push_back(dx*i);
+      for(int j = 0; j < 50; ++j)
+      {
+        if( i == 0 )
+          idata.y.push_back(dy*j);
+
+        idata.f.push_back( sin(i*dx)*sin(j*dy) );
+      }
+    }
+
+    FilterGP3DData( idata, odata, "::40:20:45:30" );
+
+    CHECK(odata.y.size() == 6);
+    CHECK(odata.x.size() == 11);
+    CHECK(odata.f.size() == 66);
+
+    CHECK(odata.y[0] == Approx(dy*40));
+    CHECK(odata.y[1] == Approx(dy*41));
+    CHECK(odata.y[4] == Approx(dy*44));
+    CHECK(odata.y[5] == Approx(dy*45));
+
+    CHECK(odata.x[0] == Approx(dx*20));
+    CHECK(odata.x[5] == Approx(dx*25));
+    CHECK(odata.x[10] == Approx(dx*30));
+
+    CHECK(odata.f[0] == Approx(sin(dx*20)*sin(dy*40)));
+    CHECK(odata.f[1] == Approx(sin(dx*20)*sin(dy*41)));
+    CHECK(odata.f[64] == Approx(sin(dx*30)*sin(dy*44)));
+    CHECK(odata.f[65] == Approx(sin(dx*30)*sin(dy*45)));
+
+
+
+  }
 }

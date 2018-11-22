@@ -7,15 +7,11 @@
  * @date 11/17/18
  */
 
-#include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/scope_exit.hpp>
 #include <boost/spirit/include/phoenix_bind.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/qi.hpp>
 
-#include <fstream>
-#include <iomanip>
+#include <string>
 
 #include "./structs.hpp"
 
@@ -64,7 +60,9 @@ int ConvertGPASCII2Binary3DDataFile(const std::string& ifilename,
 int ConvertGPBinary2ASCII3DDataFile(const std::string& ifilename,
                                     const std::string& ofilename);
 
+enum class FilterMethod { ReadThenWrite, SimultaneousReadWrite };
 int FilterGPBinary3DDataFile(const std::string& ifilename,
                                    const std::string& ofilename,
-                                   const std::string& every_spec);
+                                   const std::string& every_spec,
+                                   FilterMethod method = FilterMethod::ReadThenWrite);
 #endif  // include protector
