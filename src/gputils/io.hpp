@@ -65,4 +65,7 @@ int FilterGPBinary3DDataFile(const std::string& ifilename,
                                    const std::string& ofilename,
                                    const std::string& every_spec,
                                    FilterMethod method = FilterMethod::ReadThenWrite);
+
+int ConvertGPBinary3DDataFileCylindrical2Cartesian(const std::string& ifilename,
+                                                   const std::string& ofilename);
 #endif  // include protector

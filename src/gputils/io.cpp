@@ -477,3 +477,33 @@ int FilterGPBinary3DDataFile(const std::string& ifilename,
 
   return 1;
 }
+
+int ConvertGPBinary3DDataFileCylindrical2Cartesian(const std::string& ifilename,
+                                                   const std::string& ofilename)
+
+{
+  if (!boost::filesystem::exists(ifilename)) {
+    throw std::runtime_error("No such file: " + ifilename);
+  }
+
+  GP3DData idata;
+  std::vector<GP3DData> odata_slices;
+
+  ReadGPBinary3DDataFile(ifilename,idata);
+
+  ConvertGP3DDataCylindrical2Cartesian(idata,odata_slices);
+
+  if( odata_slices.size() == 1 )
+  {
+    WriteGPBinary3DDataFile(ofilename,odata_slices[0]);
+  }
+  else
+  {
+    for(int i = 0; i < odata_slices.size(); i++)
+    {
+      WriteGPBinary3DDataFile(ofilename+boost::lexical_cast<std::string>(i),odata_slices[i]);
+    }
+  }
+  return 0;
+}
+
