@@ -1,8 +1,70 @@
+#include <Interp.hpp>
 #include "./transformations.hpp"
 
 int ConvertGP3DDataCylindrical2Cartesian( const GP3DData& idata, std::vector<GP3DData>& odata )
+{
+  // interpret input as cylindrical coordinates
+  // x -> z
+  // y -> r
+  
+  size_t Nz = idata.x.size();
+  size_t Nr = idata.y.size();
+
+  float rmin = idata.y[0];
+  float rmax = idata.y[Nr-1];
+
+  if( rmin < 0 )
+    throw std::runtime_error("ConvertGP3DDataCylindrical2Cartesian minimum r coordinate (y column) cannot be less than 0.");
+
+  size_t Nx = 2*Nr;
+  size_t Ny = 2*Nr;
+
+  if( rmin == 0 )
   {
+    Nx -= 1;
+    Ny -= 1;
   }
+
+  float dx = 2*rmax/(Nx-1);
+  float dy = 2*rmax/(Ny-1);
+
+  odata.resize(Nz);
+
+
+  for(int k = 0; k < Nz; ++k)
+  {
+    odata[k].x.resize(Nx);
+    odata[k].y.resize(Ny);
+    odata[k].f.resize(Nx*Ny);
+
+    for(int i = 0; i < Nx; ++i)
+    {
+      odata[k].x[i] = -rmax + i*dx;
+    }
+
+    for(int j = 0; j < Ny; ++j)
+    {
+      odata[k].y[j] = -rmax + j*dy;
+    }
+
+    // create an interpolator to interpolate this z slice
+    // r coordinates are stored consecutively
+    _1D::CubicSplineInterpolator<float> interp;
+    interp.setData(Nr, idata.y.data(), idata.f.data()+k*Nz);
+    float r;
+
+    for(int i = 0; i < Nx; ++i)
+    {
+    for(int j = 0; j < Ny; ++j)
+    {
+      r = sqrt( odata[k].x[i]*odata[k].x[i] + odata[k].y[j]*odata[k].y[j] );
+      odata[k].f[Ny*i + j] = interp( r );
+    }
+    }
+
+  }
+
+}
 int FilterGP3DData( const GP3DData& idata, GP3DData& odata, const std::string& every_spec )
   {
     GP3DDataEverySpec slice(every_spec);

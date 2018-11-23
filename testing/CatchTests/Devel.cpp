@@ -983,4 +983,72 @@ TEST_CASE("Data Transformations")
 
 
   }
+
+
+  SECTION("Polar -> Cartesian")
+  {
+    GP3DData idata;
+    std::vector<GP3DData> odata_slices;
+    double dx = 0.1;
+    double dy = 0.2;
+
+    for(int i = 0; i < 3; ++i)
+    {
+      idata.x.push_back(dx*i);
+      for(int j = 0; j < 10; ++j)
+      {
+        if( i == 0 )
+          idata.y.push_back(dy*j);
+
+        idata.f.push_back( exp(-dy*j) );
+      }
+    }
+
+    ConvertGP3DDataCylindrical2Cartesian( idata, odata_slices);
+
+    CHECK(odata_slices.size() == 3);
+    CHECK(odata_slices[0].x.size() == 19);
+    CHECK(odata_slices[0].y.size() == 19);
+    CHECK(odata_slices[0].f.size() == 19*19);
+
+    // (0,0) should be at index 9,9
+    CHECK(odata_slices[0].x[0] == Approx(-dy*9));
+    CHECK(odata_slices[0].x[9] == Approx(0));
+    CHECK(odata_slices[0].x[18] == Approx(dy*9));
+
+    CHECK(odata_slices[0].y[0] == Approx(-dy*9));
+    CHECK(odata_slices[0].y[9] == Approx(0));
+    CHECK(odata_slices[0].y[18] == Approx(dy*9));
+
+    // along x = 0 and y = 0 lines, the function should be the same as z = 0
+    // line of the input.
+    for(int i = 0; i < 10; ++i)
+    {
+      CHECK(odata_slices[0].f[9*19 + 9+i] == Approx(exp(-i*dy)));
+      CHECK(odata_slices[0].f[9*19 + 9-i] == Approx(exp(-i*dy)));
+
+      CHECK(odata_slices[0].f[(9+i)*19 + 9] == Approx(exp(-i*dy)));
+      CHECK(odata_slices[0].f[(9-i)*19 + 9] == Approx(exp(-i*dy)));
+    }
+
+    // at all other points, the function is interpolated, but should be close...
+    for(int i = 0; i < 19; ++i)
+    {
+    for(int j = 0; j < 19; ++j)
+    {
+      double x = dy*(i-9);
+      double y = dy*(j-9);
+      double r = sqrt(x*x+y*y);
+      if( r > dy*9) // interpolator will not extrapolate
+      {
+        CHECK(odata_slices[0].f[i*19 + j] == Approx(0));
+      }
+      else
+      {
+        CHECK(odata_slices[0].f[i*19 + j] == Approx(exp(-r)).epsilon(0.01));
+      }
+    }
+    }
+
+  }
 }

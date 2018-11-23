@@ -2,8 +2,8 @@
 
 source ${0%/*}/env
 
-dependencies="" # list project names that your project needs to have installed
-locations=""    # list locations to look for the projects that need to be installed
+dependencies="libInterpolate" # list project names that your project needs to have installed
+locations="https://github.com/CD3/"    # list locations to look for the projects that need to be installed
 
 
 cd ${EXTDIR}
