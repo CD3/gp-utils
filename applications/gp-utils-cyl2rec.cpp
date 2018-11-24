@@ -7,6 +7,7 @@
 #include <string>
 
 #include <gputils/io.hpp>
+#include <gputils/exceptions.hpp>
 
 using namespace std;
 namespace po = boost::program_options;
@@ -126,7 +127,14 @@ Examples:
     }
   }
 
+  try{
   ConvertGPBinary3DDataFileCylindrical2Cartesian(ifn,ofn);
+  }
+  catch(corrupt_binary_matrix_file_error& e)
+  {
+    std::cerr << "There was a problem reading the input file '"<<ifn<<"'. It is either corrupt, or not a binary matrix file." << std::endl;
+    return 1;
+  }
 
   return 0;
 }

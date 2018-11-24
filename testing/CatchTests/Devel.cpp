@@ -701,6 +701,57 @@ TEST_CASE("File Input/Output", "[parsing]")
       fin.close();
 
     }
+
+    SECTION("Binary File Corruption")
+    {
+      float tmp;
+      ofstream out("test-corrupt.bin", ios::out | ios::binary);
+
+      SECTION("Wrong Format")
+      {
+      tmp = -3; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+      tmp = -3; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+      tmp = -2; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+      tmp = -1; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+
+      tmp =  1; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+      tmp = 10; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+      tmp = 11; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+      tmp = 12; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+
+      out.close();
+
+      GP3DData data;
+      CHECK_THROWS(ReadGPBinary3DDataFile( "test-corrupt.bin", data ));
+      }
+
+      SECTION("Corrupt")
+      {
+      tmp = 3; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+      tmp = -3; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+      tmp = -2; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+      tmp = -1; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+
+      tmp =  1; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+      tmp = 10; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+      tmp = 11; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+      tmp = 12; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+
+      tmp =  2; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+      tmp = 20; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+      tmp = 21; out.write(reinterpret_cast<char*>(&tmp), sizeof(float));
+
+      out.close();
+
+      GP3DData data;
+      CHECK_THROWS(ReadGPBinary3DDataFile( "test-corrupt.bin", data ));
+      }
+
+
+
+
+
+    }
   }
 }
 

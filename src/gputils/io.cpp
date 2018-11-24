@@ -8,6 +8,7 @@
 
 #include "./io.hpp"
 #include "./transformations.hpp"
+#include "./exceptions.hpp"
 
 
 int ReadGPASCII3DDataFile(const std::string& ifilename, GP3DData& data)
@@ -81,21 +82,16 @@ int ReadGPBinary3DDataFile(const std::string& ifilename, GP3DData& data)
   size_t N = fs/sizeof(float);
   std::ifstream fin;
 
-  data.x.clear();
-  data.y.clear();
-  data.f.clear();
-
   fin.open(ifilename.c_str(), std::ios::in | std::ios::binary);
   BOOST_SCOPE_EXIT(&fin) { fin.close(); }
   BOOST_SCOPE_EXIT_END
 
   float buffer;
+
+  // Determine matrix size
   // first number is Ny
   fin.read(reinterpret_cast<char*>(&buffer),sizeof(float));
   size_t Ny = buffer;
-  data.y.resize(Ny);
-  // read in y coordinates
-  fin.read(reinterpret_cast<char*>(data.y.data()),Ny*sizeof(float));
   // file holds a total of N elements.
   // - one of these is the number of y corrdinates
   // - Ny of these are the y coordinates
@@ -105,8 +101,27 @@ int ReadGPBinary3DDataFile(const std::string& ifilename, GP3DData& data)
   // so N - 1 - Ny = Nx + Nx*Ny = Nx*(1 + Ny)
   // which means Nx = (N - 1 - Ny)/1 + Ny)
   size_t Nx = (N - 1 - Ny)/(1 + Ny);
+
+  // check if the file may be corrupt, not not a binary matrix file.
+  if( buffer < 1 ) // first number is negative
+    throw corrupt_binary_matrix_file_error("Binary file "+ifilename+" is corrupt or not a binary matrix datafile.");
+
+  if( (Nx+1)*(Ny+1) != N ) // file size is not a multiple of Ny+1
+    throw corrupt_binary_matrix_file_error("Binary file "+ifilename+" is corrupt or not a binary matrix datafile.");
+
+
+  // OK, we are ready to read data
+  data.x.clear();
+  data.y.clear();
+  data.f.clear();
+
+  data.y.resize(Ny);
   data.x.resize(Nx);
   data.f.resize(Nx*Ny);
+
+
+  // read in y coordinates
+  fin.read(reinterpret_cast<char*>(data.y.data()),Ny*sizeof(float));
   // read in data
   for(int i = 0; i < Nx; ++i)
   {
