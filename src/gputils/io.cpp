@@ -501,7 +501,7 @@ int ConvertGPBinary3DDataFileCylindrical2Cartesian(const std::string& ifilename,
   {
     for(int i = 0; i < odata_slices.size(); i++)
     {
-      WriteGPBinary3DDataFile(ofilename+boost::lexical_cast<std::string>(i),odata_slices[i]);
+      WriteGPBinary3DDataFile(ofilename+"."+boost::lexical_cast<std::string>(i),odata_slices[i]);
     }
   }
   return 0;

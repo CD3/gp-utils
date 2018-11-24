@@ -1,6 +1,7 @@
-#include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/convenience.hpp>
+#include <boost/program_options.hpp>
+#include <boost/spirit/include/qi.hpp>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -9,6 +10,8 @@
 
 using namespace std;
 namespace po = boost::program_options;
+
+namespace qi = boost::spirit::qi;
 
 int main(int argc, char *argv[])
 {
@@ -28,8 +31,7 @@ int main(int argc, char *argv[])
 
   // now define our arguments.
   po::options_description arg_options("Arguments");
-  arg_options.add_options()("datafile",
-                            "data file to extract from.");
+  arg_options.add_options()("datafile", "data file to extract from.");
 
   // combine the options and arguments into one option list.
   // this is what we will use to parse the command line, but
@@ -54,17 +56,19 @@ int main(int argc, char *argv[])
   // -----------------------------------
 
   if (argc == 1 || vm.count("help")) {
-    cout << "gp-utils-extract [options] <datafile>";
+    cout << "gp-utils-cyl2rec [options] <datafile>";
     cout << "\n\n";
     cout << opt_options << "\n";
     cout << "Arguments:\n";
     cout << "  <datafile>      the datafile to read.\n";
     cout << "\n\n";
     cout << R"EOF(
+Create a Cartesian datafile from cylindrical data.
 
-Extracts a sub-block of data from a Gnuplot binary matrix data file (see http://gnuplot.sourceforge.net/docs_4.2/node330.html).
-The sub-block to extract is specified using Gnuplot's every option syntax (i.e. ::10:5:20:10).
-See http://gnuplot.sourceforge.net/docs_4.2/node121.html
+This tool reads a Gnuplot binary matrix datafile, interprets the x-y coordinates as z-r coordinates, creates an x-y slices
+each z coordinates, and writes them to new binary matrix datafiles. This is useful if you are working with
+azmuthally symmetric function and want to create a plot of the profile at some z slice. For example, to generate a plot
+of the beam profile of a circular Gaussian beam at multiple positions along the propagation axis.
 
 NOTE: Gnuplot the x-y coordinates in its binary matrix file format between
 versions 4 and 5. The gp-utils tools ASSUME THE VERSION 4 FORMAT. This means
@@ -74,56 +78,55 @@ and http://gnuplot.sourceforge.net/docs_4.2/node330.html.
 
   > splot 'ascii-datafile.txt', 'binary-datafile.bin' using 2:1:3
 
-However, Gnuplot's the every option syntax is based on ASCII file format, which assumes
-consecutive points in a block have different y coordinates with the same x coordinate.
-So Gnuplot's start_point and stop_point correspond to y coordinates, and start_block and
-stop_block correspond to x coordinates. See http://gnuplot.sourceforge.net/docs_4.2/node121.html
-for documentation on the every option.
 
 Examples:
 
-  Extract all points from the 5'th to 10'th x coordinates (inclusive) from a binary data file
-  named 'data.bin' and write a new binary data file named 'data.extracted.bin':
-
-  > gp-utils-extract -e :::5::10 data.bin
-
-  Extract all points from the 5'th to 10'th x coordinates (inclusive), and the
-  3rd to 8th y coordinates from a binary data file named 'data.bin' and write a
-  new binary data file named 'data.extracted.bin', overwriting if it already
-  exists:
-
-  > gp-utils-extract -x -e :::5:3:10:8 data.bin
 
 )EOF";
     return 0;
   }
 
-
   string ifn = vm["datafile"].as<string>();
-  string ofn = boost::filesystem::change_extension(ifn,".extracted.bin").string();
+  string ofn =
+      boost::filesystem::change_extension(ifn, ".cyl2rec.bin").string();
 
-  if( vm.count("output") > 0 )
-  {
+  if (vm.count("output") > 0) {
     ofn = vm["output"].as<string>();
   }
 
-  if( !boost::filesystem::exists(ifn) )
-  {
-    cerr << "ERROR: input file '"<<ifn<<"' does not exist. Check spelling.\n";
+  if (!boost::filesystem::exists(ifn)) {
+    cerr << "ERROR: input file '" << ifn
+         << "' does not exist. Check spelling.\n";
     return 1;
   }
 
-  if( boost::filesystem::exists(ofn) && vm.count("overwrite") < 1 )
-  {
-    cerr << "ERROR: output file '"<<ofn<<"' exists. Use -x to overwrite.\n";
-    return 1;
+  if (vm.count("overwrite") < 1) {
+    boost::filesystem::path opath(ofn);
+    if( !opath.is_absolute() && opath.parent_path().empty() )
+    { // prepend current directory is no directory was given.
+      opath = boost::filesystem::path(".") / opath;
+    }
+    vector<string> files;
+    for (auto &x : boost::filesystem::directory_iterator(opath.parent_path())) {
+      string fn = x.path().generic_string();
+      auto it = fn.begin();
+      if( qi::parse(it, fn.end(), qi::lit(opath.generic_string()) >> *(qi::lit(".") >> qi::int_) ) && it == fn.end() )
+        files.push_back(fn);
+    }
+
+    if(files.size() > 0)
+    {
+       cerr << "ERROR: output file '"<<ofn<<"' could cause the following files to be overwritten:\n";
+       for( auto f : files )
+       {
+         std::cerr << "  " << f << std::endl;
+       }
+       cerr << "Use -x to overwrite.\n";
+      return 1;
+    }
   }
 
-
-  FilterGPBinary3DDataFile(ifn,ofn,vm["every"].as<string>());
-  
-
-
+  ConvertGPBinary3DDataFileCylindrical2Cartesian(ifn,ofn);
 
   return 0;
 }
