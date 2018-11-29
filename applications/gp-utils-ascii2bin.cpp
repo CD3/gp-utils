@@ -58,7 +58,6 @@ int main(int argc, char *argv[])
     cout << "Arguments:\n";
     cout << "  <datafile>      the datafile to convert.\n";
     cout << R"EOF(
-    cout << "\n\n";
 Converts an ASCII 3D Gnuplot datafile to binary matrix format (see http://gnuplot.sourceforge.net/docs_4.2/node330.html).
 Only 3 column files with regularly coordinates are supported (i.e. only files that can be plotted with `splot` with
 a mesh.
