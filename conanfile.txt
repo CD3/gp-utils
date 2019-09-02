@@ -1,0 +1,8 @@
+[requires]
+libField/master@cd3/devel
+libInterpolate/master@cd3/devel
+UnitConvert/master@cd3/devel
+hdf5/1.10.5@cd3/devel
+boost/1.69.0@conan/stable
+[generators]
+virtualenv

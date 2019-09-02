@@ -24,7 +24,8 @@ configure_file( "${CMAKE_CURRENT_BINARY_DIR}/include/${PROJECT_NAME}_version.h"
 # common dependencies
 include(macro-find_project_dependency)
 find_package( Boost COMPONENTS filesystem REQUIRED )
-find_project_dependency( libInterp REQUIRED PATHS ${CMAKE_CURRENT_SOURCE_DIR}/externals/install SUBDIRECTORY_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/externals )
+find_package( hdf5 REQUIRED )
+find_package( libInterp REQUIRED )
 
 string( REGEX REPLACE "^lib" "" LIB_NAME ${PROJECT_NAME} )
 add_library( ${LIB_NAME} )
@@ -49,6 +50,7 @@ target_link_libraries(${LIB_NAME}
                           Boost::boost
                           Boost::filesystem
                           libInterp::Interp
+                          hdf5::hdf5_cpp-static
                      )
 
 if( ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} AND BUILD_UNIT_TESTS)

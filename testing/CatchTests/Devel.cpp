@@ -311,6 +311,51 @@ TEST_CASE("File Input/Output", "[parsing]")
 
     }
 
+    SECTION("HDF5 Field")
+    {
+      GP3DData data;
+
+      data.x.push_back(1.1);
+      data.x.push_back(1.2);
+
+      data.y.push_back(2.1);
+      data.y.push_back(2.2);
+      data.y.push_back(2.3);
+
+      data.f.push_back(1.1 + 2.1);
+      data.f.push_back(1.1 + 2.2);
+      data.f.push_back(1.1 + 2.3);
+      data.f.push_back(1.2 + 2.1);
+      data.f.push_back(1.2 + 2.2);
+      data.f.push_back(1.2 + 2.3);
+
+      WriteHDF5Field3DDataFile("test-3d.h5", data);
+
+      data.clear();
+
+      ReadHDF5Field3DDataFile("test-3d.h5", data);
+
+      CHECK(data.x.size() == 2);
+      CHECK(data.y.size() == 3);
+      CHECK(data.f.size() == 6);
+
+      CHECK(data.x[0] == Approx(1.1));
+      CHECK(data.x[1] == Approx(1.2));
+
+      CHECK(data.y[0] == Approx(2.1));
+      CHECK(data.y[1] == Approx(2.2));
+      CHECK(data.y[2] == Approx(2.3));
+
+      CHECK(data.f[0] == Approx(1.1+2.1));
+      CHECK(data.f[1] == Approx(1.1+2.2));
+      CHECK(data.f[2] == Approx(1.1+2.3));
+      CHECK(data.f[3] == Approx(1.2+2.1));
+      CHECK(data.f[4] == Approx(1.2+2.2));
+      CHECK(data.f[5] == Approx(1.2+2.3));
+
+
+    }
+
     SECTION("ASCII - Comments and Blank Lines")
     {
       out << "\n";
@@ -890,7 +935,7 @@ TEST_CASE("File Transformations")
 
     WriteGPBinary3DDataFile( "test-3d-cyl.bin", data);
     ConvertGPBinary3DDataFileCylindrical2Cartesian("test-3d-cyl.bin", "test-3d-car.bin");
-    ReadGPBinary3DDataFile( "test-3d-rec.bin", data);
+    ReadGPBinary3DDataFile( "test-3d-car.bin.0", data);
 
 
 

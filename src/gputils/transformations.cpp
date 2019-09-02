@@ -95,7 +95,7 @@ int FilterGP3DData( const GP3DData& idata, GP3DData& odata, const std::string& e
       xe = iNx-1;
 
     if( yi < 1 || xi < 1 )
-      throw std::runtime_error("FilterGP3DData inrements can be less than 1. Spec string:"+every_spec);
+      throw std::runtime_error("FilterGP3DData increments can be less than 1. Spec string:"+every_spec);
 
     if( ye < ys )
       throw std::runtime_error("FilterGP3DData: y (point) end cannot be less than start. Spec string: "+every_spec);

@@ -6,10 +6,11 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/scope_exit.hpp>
 
+#include <H5Cpp.h>
+
+#include "./exceptions.hpp"
 #include "./io.hpp"
 #include "./transformations.hpp"
-#include "./exceptions.hpp"
-
 
 int ReadGPASCII3DDataFile(const std::string& ifilename, GP3DData& data)
 {
@@ -71,7 +72,6 @@ int ReadGPASCII3DDataFile(const std::string& ifilename, GP3DData& data)
   return 0;
 }
 
-
 int ReadGPBinary3DDataFile(const std::string& ifilename, GP3DData& data)
 {
   if (!boost::filesystem::exists(ifilename)) {
@@ -79,7 +79,7 @@ int ReadGPBinary3DDataFile(const std::string& ifilename, GP3DData& data)
   }
   // get size of file so we can compute how many elements it holds
   auto fs = boost::filesystem::file_size(ifilename);
-  size_t N = fs/sizeof(float);
+  size_t N = fs / sizeof(float);
   std::ifstream fin;
 
   fin.open(ifilename.c_str(), std::ios::in | std::ios::binary);
@@ -90,7 +90,7 @@ int ReadGPBinary3DDataFile(const std::string& ifilename, GP3DData& data)
 
   // Determine matrix size
   // first number is Ny
-  fin.read(reinterpret_cast<char*>(&buffer),sizeof(float));
+  fin.read(reinterpret_cast<char*>(&buffer), sizeof(float));
   size_t Ny = buffer;
   // file holds a total of N elements.
   // - one of these is the number of y corrdinates
@@ -100,15 +100,18 @@ int ReadGPBinary3DDataFile(const std::string& ifilename, GP3DData& data)
   // N will also be: N = 1 + Ny + Nx + Nx*Ny
   // so N - 1 - Ny = Nx + Nx*Ny = Nx*(1 + Ny)
   // which means Nx = (N - 1 - Ny)/1 + Ny)
-  size_t Nx = (N - 1 - Ny)/(1 + Ny);
+  size_t Nx = (N - 1 - Ny) / (1 + Ny);
 
   // check if the file may be corrupt, not not a binary matrix file.
-  if( buffer < 1 ) // first number is negative
-    throw corrupt_binary_matrix_file_error("Binary file "+ifilename+" is corrupt or not a binary matrix datafile.");
+  if (buffer < 1)  // first number is negative
+    throw corrupt_binary_matrix_file_error(
+        "Binary file " + ifilename +
+        " is corrupt or not a binary matrix datafile.");
 
-  if( (Nx+1)*(Ny+1) != N ) // file size is not a multiple of Ny+1
-    throw corrupt_binary_matrix_file_error("Binary file "+ifilename+" is corrupt or not a binary matrix datafile.");
-
+  if ((Nx + 1) * (Ny + 1) != N)  // file size is not a multiple of Ny+1
+    throw corrupt_binary_matrix_file_error(
+        "Binary file " + ifilename +
+        " is corrupt or not a binary matrix datafile.");
 
   // OK, we are ready to read data
   data.x.clear();
@@ -117,19 +120,61 @@ int ReadGPBinary3DDataFile(const std::string& ifilename, GP3DData& data)
 
   data.y.resize(Ny);
   data.x.resize(Nx);
-  data.f.resize(Nx*Ny);
-
+  data.f.resize(Nx * Ny);
 
   // read in y coordinates
-  fin.read(reinterpret_cast<char*>(data.y.data()),Ny*sizeof(float));
+  fin.read(reinterpret_cast<char*>(data.y.data()), Ny * sizeof(float));
   // read in data
-  for(int i = 0; i < Nx; ++i)
-  {
-    fin.read(reinterpret_cast<char*>(data.x.data()+i),sizeof(float));
-    fin.read(reinterpret_cast<char*>(data.f.data()+i*Ny),Ny*sizeof(float));
+  for (int i = 0; i < Nx; ++i) {
+    fin.read(reinterpret_cast<char*>(data.x.data() + i), sizeof(float));
+    fin.read(reinterpret_cast<char*>(data.f.data() + i * Ny),
+             Ny * sizeof(float));
   }
 
+  return 0;
+}
 
+int ReadHDF5Field3DDataFile(const std::string& ifilename, GP3DData& data)
+{
+  if (!boost::filesystem::exists(ifilename)) {
+    throw std::runtime_error("No such file: " + ifilename);
+  }
+
+  H5::H5File file(ifilename.c_str(), H5F_ACC_RDONLY);
+
+  hsize_t dims[2];
+  auto dset = file.openDataSet("field");
+  auto dspace = dset.getSpace();
+  if (dspace.getSimpleExtentNdims() != 2)
+    throw std::runtime_error("Cannot read field from file '" + ifilename +
+                             "'. Expecting 3D data (2D function), but found " +
+                             std::to_string(dspace.getSimpleExtentNdims()) +
+                             "D function.");
+  dspace.getSimpleExtentDims(dims);
+
+  // OK, we are ready to read data
+  data.x.clear();
+  data.y.clear();
+  data.f.clear();
+
+  data.x.resize(dims[0]);
+  data.y.resize(dims[1]);
+  data.f.resize(dims[0] * dims[1]);
+
+  dset.read(data.f.data(), H5::PredType::NATIVE_FLOAT);
+  dset.close();
+  {
+    auto dset = file.openDataSet("axis 0");
+    dset.read(data.x.data(), H5::PredType::NATIVE_FLOAT);
+    dset.close();
+  }
+  {
+    auto dset = file.openDataSet("axis 1");
+    dset.read(data.y.data(), H5::PredType::NATIVE_FLOAT);
+    dset.close();
+  }
+
+  file.close();
 
   return 0;
 }
@@ -142,7 +187,7 @@ int QueryGPBinary3DDataFile(const std::string& ifilename, GP3DDataInfo& info)
   info.clear();
 
   auto fs = boost::filesystem::file_size(ifilename);
-  size_t N = fs/sizeof(float);
+  size_t N = fs / sizeof(float);
   float tmp;
 
   info.size_in_bytes = fs;
@@ -153,46 +198,36 @@ int QueryGPBinary3DDataFile(const std::string& ifilename, GP3DDataInfo& info)
   BOOST_SCOPE_EXIT(&fin) { fin.close(); }
   BOOST_SCOPE_EXIT_END
 
+  fin.read(reinterpret_cast<char*>(&tmp), sizeof(float));
 
-  fin.read(reinterpret_cast<char*>(&tmp),sizeof(float));
-  
   info.Ny = tmp;
-  info.Nx = (N - 1 - info.Ny.get())/(1 + info.Ny.get());
+  info.Nx = (N - 1 - info.Ny.get()) / (1 + info.Ny.get());
 
-  fin.read(reinterpret_cast<char*>(&tmp),sizeof(float));
+  fin.read(reinterpret_cast<char*>(&tmp), sizeof(float));
   info.ymin = tmp;
 
-  if( info.Ny.get() > 1 )
-  {
-    fin.ignore((info.Ny.get()-2)*sizeof(float));
-    fin.read(reinterpret_cast<char*>(&tmp),sizeof(float));
+  if (info.Ny.get() > 1) {
+    fin.ignore((info.Ny.get() - 2) * sizeof(float));
+    fin.read(reinterpret_cast<char*>(&tmp), sizeof(float));
     info.ymax = tmp;
-  }
-  else
-  {
+  } else {
     info.ymax = info.ymin.get();
   }
 
-  fin.read(reinterpret_cast<char*>(&tmp),sizeof(float));
+  fin.read(reinterpret_cast<char*>(&tmp), sizeof(float));
   info.xmin = tmp;
 
-  if( info.Nx.get() > 1)
-  {
-    fin.ignore((info.Ny.get())*sizeof(float));
-    if( info.Nx.get() > 2 )
-    {
-      fin.ignore(((info.Ny.get()+1)*(info.Nx.get()-2))*sizeof(float));
+  if (info.Nx.get() > 1) {
+    fin.ignore((info.Ny.get()) * sizeof(float));
+    if (info.Nx.get() > 2) {
+      fin.ignore(((info.Ny.get() + 1) * (info.Nx.get() - 2)) * sizeof(float));
     }
-    fin.read(reinterpret_cast<char*>(&tmp),sizeof(float));
+    fin.read(reinterpret_cast<char*>(&tmp), sizeof(float));
     info.xmax = tmp;
+  } else {
+    info.xmax = info.xmin.get();
   }
-  else
-  {
-  info.xmax = info.xmin.get();
-  }
-
 }
-
 
 int WriteGPBinary3DDataFile(const std::string& ofilename, const GP3DData& data)
 {
@@ -238,9 +273,40 @@ int WriteGPASCII3DDataFile(const std::string& ofilename, const GP3DData& data)
   return 0;
 }
 
+int WriteHDF5Field3DDataFile(const std::string& ofilename, const GP3DData& data)
+{
+  H5::H5File file(ofilename.c_str(), H5F_ACC_TRUNC);
+
+  hsize_t dims[2];
+  dims[0] = data.x.size();
+  dims[1] = data.y.size();
+
+  {
+    H5::DataSpace dspace(1, &dims[0]);
+    auto dset =
+        file.createDataSet("axis 0", H5::PredType::NATIVE_FLOAT, dspace);
+    dset.write(data.x.data(), H5::PredType::NATIVE_FLOAT);
+    dset.close();
+  }
+  {
+    H5::DataSpace dspace(1, &dims[1]);
+    auto dset =
+        file.createDataSet("axis 1", H5::PredType::NATIVE_FLOAT, dspace);
+    dset.write(data.y.data(), H5::PredType::NATIVE_FLOAT);
+    dset.close();
+  }
+
+  H5::DataSpace dspace(2, dims);
+  auto dset = file.createDataSet("field", H5::PredType::NATIVE_FLOAT, dspace);
+  dset.write(data.f.data(), H5::PredType::NATIVE_FLOAT);
+  dset.close();
+
+  file.close();
+}
+
 int ConvertGPASCII2Binary3DDataFile(const std::string& ifilename,
                                     const std::string& ofilename,
-                                    ConvertMethod method )
+                                    ConvertMethod method)
 {
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
@@ -376,39 +442,68 @@ int ConvertGPBinary2ASCII3DDataFile(const std::string& ifilename,
     throw std::runtime_error("No such file: " + ifilename);
   }
 
-    // this method is simple, but it requires that
-    // there be enough memory to store the entire
-    // data set.
-    GP3DData data;
+  // this method is simple, but it requires that
+  // there be enough memory to store the entire
+  // data set.
+  GP3DData data;
 
-    ReadGPBinary3DDataFile(ifilename, data);
-    WriteGPASCII3DDataFile(ofilename, data);
+  ReadGPBinary3DDataFile(ifilename, data);
+  WriteGPASCII3DDataFile(ofilename, data);
 
-    return 0;
+  return 0;
 }
 
-int FilterGPBinary3DDataFile(const std::string& ifilename,
-                             const std::string& ofilename,
-                             const std::string& every_spec,
-                             FilterMethod method)
+int ConvertGPASCII2HDF5Field3DDataFile(const std::string& ifilename,
+                                       const std::string& ofilename)
 {
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
   }
 
-  if( method == FilterMethod::ReadThenWrite)
-  {
-    GP3DData idata,odata;
-    ReadGPBinary3DDataFile(ifilename,idata);
-    FilterGP3DData(idata,odata,every_spec);
-    WriteGPBinary3DDataFile(ofilename,odata);
+  // this method is simple, but it requires that
+  // there be enough memory to store the entire
+  // data set.
+  GP3DData data;
+
+  ReadGPASCII3DDataFile(ifilename, data);
+  WriteHDF5Field3DDataFile(ofilename, data);
+
+  return 0;
+}
+
+int ConvertHDF5Field2GPASCII3DDataFile(const std::string& ifilename,
+                                       const std::string& ofilename)
+{
+  if (!boost::filesystem::exists(ifilename)) {
+    throw std::runtime_error("No such file: " + ifilename);
   }
 
-  if( method == FilterMethod::SimultaneousReadWrite)
-  {
+  GP3DData data;
+
+  ReadHDF5Field3DDataFile(ifilename, data);
+  WriteGPASCII3DDataFile(ofilename, data);
+
+  return 0;
+}
+
+int FilterGPBinary3DDataFile(const std::string& ifilename,
+                             const std::string& ofilename,
+                             const std::string& every_spec, FilterMethod method)
+{
+  if (!boost::filesystem::exists(ifilename)) {
+    throw std::runtime_error("No such file: " + ifilename);
+  }
+
+  if (method == FilterMethod::ReadThenWrite) {
+    GP3DData idata, odata;
+    ReadGPBinary3DDataFile(ifilename, idata);
+    FilterGP3DData(idata, odata, every_spec);
+    WriteGPBinary3DDataFile(ofilename, odata);
+  }
+
+  if (method == FilterMethod::SimultaneousReadWrite) {
     std::ifstream fin;
     std::ofstream fout;
-
 
     fin.open(ifilename.c_str(), std::ios::in | std::ios::binary);
     fout.open(ofilename.c_str(), std::ios::out | std::ios::binary);
@@ -425,70 +520,74 @@ int FilterGPBinary3DDataFile(const std::string& ifilename,
 
     // get size of file so we can compute how many elements it holds
     auto fs = boost::filesystem::file_size(ifilename);
-    N = fs/sizeof(float);
+    N = fs / sizeof(float);
 
-    fin.read(reinterpret_cast<char*>(&tmp),sizeof(float));
+    fin.read(reinterpret_cast<char*>(&tmp), sizeof(float));
     Ny = tmp;
-    Nx = (N - 1 - Ny)/(1 + Ny);
-
+    Nx = (N - 1 - Ny) / (1 + Ny);
 
     GP3DDataEverySpec slice(every_spec);
 
-    size_t ys,xs, ye, xe, newNx, newNy;
+    size_t ys, xs, ye, xe, newNx, newNy;
     ys = slice.y_start.get_value_or(0);
     xs = slice.x_start.get_value_or(0);
-    ye = slice.y_end.get_value_or(Ny-1);
-    xe = slice.x_end.get_value_or(Nx-1);
+    ye = slice.y_end.get_value_or(Ny - 1);
+    xe = slice.x_end.get_value_or(Nx - 1);
 
-    if(ys >= Ny)
-      ys = Ny-1;
-    if(ye >= Ny)
-      ye = Ny-1;
+    if (ys >= Ny) ys = Ny - 1;
+    if (ye >= Ny) ye = Ny - 1;
 
-    if(xs >= Nx)
-      xs = Nx-1;
-    if(xe >= Nx)
-      xe = Nx-1;
+    if (xs >= Nx) xs = Nx - 1;
+    if (xe >= Nx) xe = Nx - 1;
 
-    if( slice.y_inc || slice.x_inc )
-      throw std::runtime_error("FilterGPBinary3DDataFile does not support y or x increments yet. Spec string:"+every_spec);
+    if (slice.y_inc || slice.x_inc)
+      throw std::runtime_error(
+          "FilterGPBinary3DDataFile does not support y or x increments yet. "
+          "Spec string:" +
+          every_spec);
 
-    if( ye < ys )
-      throw std::runtime_error("FilterGPBinary3DDataFile: y (point) end cannot be less than start. Spec string: "+every_spec);
+    if (ye < ys)
+      throw std::runtime_error(
+          "FilterGPBinary3DDataFile: y (point) end cannot be less than start. "
+          "Spec string: " +
+          every_spec);
 
-    if( xe < xs )
-      throw std::runtime_error("FilterGPBinary3DDataFile: x (block) end cannot be less than start. Spec string: "+every_spec);
-
+    if (xe < xs)
+      throw std::runtime_error(
+          "FilterGPBinary3DDataFile: x (block) end cannot be less than start. "
+          "Spec string: " +
+          every_spec);
 
     // ys is *inclusive*
     newNy = ye - ys + 1;
     newNx = xe - xs + 1;
 
-    buffer.resize(1+newNy);
+    buffer.resize(1 + newNy);
 
     // first line with y coordinates
     buffer[0] = newNy;
-    fin.ignore( ys*sizeof(float) );  // skip to first y coordinate in slice
-    fin.read(reinterpret_cast<char*>(buffer.data()+1), newNy*sizeof(float) ); // read new y coordinates
-    fin.ignore((Ny - ye - 1)*sizeof(float));  // skip to next line
-    fout.write( reinterpret_cast<char*>(buffer.data()), buffer.size()*sizeof(float) );
+    fin.ignore(ys * sizeof(float));  // skip to first y coordinate in slice
+    fin.read(reinterpret_cast<char*>(buffer.data() + 1),
+             newNy * sizeof(float));            // read new y coordinates
+    fin.ignore((Ny - ye - 1) * sizeof(float));  // skip to next line
+    fout.write(reinterpret_cast<char*>(buffer.data()),
+               buffer.size() * sizeof(float));
 
-    
-    fin.ignore( xs*(Ny+1)*sizeof(float) );  // skip to first x coordinate in slice
-    for(int i = 0; i < newNx; ++i)
-    {
-      fin.read(reinterpret_cast<char*>(buffer.data()), sizeof(float) ); // read x coordinate
-      fin.ignore( ys*sizeof(float) );  // skip to first y coordinate in slice
-      fin.read(reinterpret_cast<char*>(buffer.data()+1), newNy*sizeof(float) ); // read new function values
-      fin.ignore((Ny - ye - 1)*sizeof(float));  // skip to next line
-      fout.write( reinterpret_cast<char*>(buffer.data()), buffer.size()*sizeof(float) );
+    fin.ignore(xs * (Ny + 1) *
+               sizeof(float));  // skip to first x coordinate in slice
+    for (int i = 0; i < newNx; ++i) {
+      fin.read(reinterpret_cast<char*>(buffer.data()),
+               sizeof(float));         // read x coordinate
+      fin.ignore(ys * sizeof(float));  // skip to first y coordinate in slice
+      fin.read(reinterpret_cast<char*>(buffer.data() + 1),
+               newNy * sizeof(float));            // read new function values
+      fin.ignore((Ny - ye - 1) * sizeof(float));  // skip to next line
+      fout.write(reinterpret_cast<char*>(buffer.data()),
+                 buffer.size() * sizeof(float));
     }
 
-
-
-  return 0;
+    return 0;
   }
-
 
   return 1;
 }
@@ -504,21 +603,18 @@ int ConvertGPBinary3DDataFileCylindrical2Cartesian(const std::string& ifilename,
   GP3DData idata;
   std::vector<GP3DData> odata_slices;
 
-  ReadGPBinary3DDataFile(ifilename,idata);
+  ReadGPBinary3DDataFile(ifilename, idata);
 
-  ConvertGP3DDataCylindrical2Cartesian(idata,odata_slices);
+  ConvertGP3DDataCylindrical2Cartesian(idata, odata_slices);
 
-  if( odata_slices.size() == 1 )
-  {
-    WriteGPBinary3DDataFile(ofilename,odata_slices[0]);
-  }
-  else
-  {
-    for(int i = 0; i < odata_slices.size(); i++)
-    {
-      WriteGPBinary3DDataFile(ofilename+"."+boost::lexical_cast<std::string>(i),odata_slices[i]);
+  if (odata_slices.size() == 1) {
+    WriteGPBinary3DDataFile(ofilename, odata_slices[0]);
+  } else {
+    for (int i = 0; i < odata_slices.size(); i++) {
+      WriteGPBinary3DDataFile(
+          ofilename + "." + boost::lexical_cast<std::string>(i),
+          odata_slices[i]);
     }
   }
   return 0;
 }
-

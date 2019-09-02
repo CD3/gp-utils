@@ -47,8 +47,10 @@ struct GPASCIIDataLineParser : spt::qi::grammar<Iterator, GPDataLine()> {
 
 int ReadGPASCII3DDataFile(const std::string& filename, GP3DData& data);
 int ReadGPBinary3DDataFile(const std::string& filename, GP3DData& data);
+int ReadHDF5Field3DDataFile(const std::string& filename, GP3DData& data);
 int WriteGPBinary3DDataFile(const std::string& filename, const GP3DData& data);
 int WriteGPASCII3DDataFile(const std::string& filename, const GP3DData& data);
+int WriteHDF5Field3DDataFile(const std::string& filename, const GP3DData& data);
 
 int QueryGPBinary3DDataFile(const std::string& filename, GP3DDataInfo& info);
 
@@ -59,6 +61,11 @@ int ConvertGPASCII2Binary3DDataFile(const std::string& ifilename,
 
 int ConvertGPBinary2ASCII3DDataFile(const std::string& ifilename,
                                     const std::string& ofilename);
+
+int ConvertGPASCII2HDF5Field3DDataFile(const std::string& ifilename,
+                                       const std::string& ofilename);
+int ConvertHDF5Field2GPASCII3DDataFile(const std::string& ifilename,
+                                     const std::string& ofilename);
 
 enum class FilterMethod { ReadThenWrite, SimultaneousReadWrite };
 int FilterGPBinary3DDataFile(const std::string& ifilename,

@@ -18,5 +18,6 @@
  */
 int ConvertGP3DDataCylindrical2Cartesian( const GP3DData& idata, std::vector<GP3DData>& odata );
 int FilterGP3DData( const GP3DData& idata, GP3DData& odata, const std::string& every_spec );
+int ApplyGP3DDataKernel( const GP3DData& idata, GP3DData& odata );
 
 #endif // include protector
