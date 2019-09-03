@@ -45,14 +45,26 @@ struct GPASCIIDataLineParser : spt::qi::grammar<Iterator, GPDataLine()> {
   }
 };
 
+int ReadGPASCII2DDataFile(const std::string& filename, GP2DData& data);
+int WriteGPASCII2DDataFile(const std::string& filename, const GP2DData& data);
+int ReadHDF5Field2DDataFile(const std::string& filename, GP2DData& data);
+int WriteHDF5Field2DDataFile(const std::string& filename, const GP2DData& data);
+
 int ReadGPASCII3DDataFile(const std::string& filename, GP3DData& data);
-int ReadGPBinary3DDataFile(const std::string& filename, GP3DData& data);
-int ReadHDF5Field3DDataFile(const std::string& filename, GP3DData& data);
-int WriteGPBinary3DDataFile(const std::string& filename, const GP3DData& data);
 int WriteGPASCII3DDataFile(const std::string& filename, const GP3DData& data);
+int ReadGPBinary3DDataFile(const std::string& filename, GP3DData& data);
+int WriteGPBinary3DDataFile(const std::string& filename, const GP3DData& data);
+int ReadHDF5Field3DDataFile(const std::string& filename, GP3DData& data);
 int WriteHDF5Field3DDataFile(const std::string& filename, const GP3DData& data);
 
 int QueryGPBinary3DDataFile(const std::string& filename, GP3DDataInfo& info);
+
+
+int ConvertGPASCII2HDF5Field2DDataFile(const std::string& ifilename,
+                                       const std::string& ofilename);
+int ConvertHDF5Field2GPASCII2DDataFile(const std::string& ifilename,
+                                       const std::string& ofilename);
+
 
 enum class ConvertMethod { ReadThenWrite, SimultaneousReadWrite };
 int ConvertGPASCII2Binary3DDataFile(const std::string& ifilename,

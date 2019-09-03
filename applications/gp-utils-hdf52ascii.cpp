@@ -1,5 +1,5 @@
-#include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
     // these are simple flag options, they do not have an argument.
     ("help,h",    "print help message.")
     ("output,o"   , po::value<string>(), "file to write output to.")
+    ("columns,c"   , po::value<size_t>()->default_value(3), "number of ASCII columns (2 or 3).")
     ("overwrite,x", "overwrite existing output files.")
     ;
   // clang-format on
@@ -54,34 +55,39 @@ int main(int argc, char *argv[])
     cout << "Arguments:\n";
     cout << "  <datafile>      the datafile to convert.\n";
     cout << R"EOF(
-Converts a HDF5 datafile to ASCII 3D Gnuplot format. The hdf5 format is the format used by `libField` (https://github.com/CD3/libField), and
-is the format written by `gp-utils-ascii2hdf5`.
+Converts a HDF5 datafile to ASCII Gnuplot format. The hdf5 format is the format used by `libField` (https://github.com/CD3/libField), and
+is the format written by `gp-utils-ascii2hdf5`. Both 2 and 3 column ASCII files are supported. By default, 3 columns are assumed. To convert
+2 column files, use `--columns 2`.
 )EOF";
     return 0;
   }
 
-
   string ifn = vm["datafile"].as<string>();
-  string ofn = boost::filesystem::change_extension(ifn,".h5").string();
-  if( vm.count("output") > 0 )
-  {
+  string ofn = boost::filesystem::change_extension(ifn, ".h5").string();
+  if (vm.count("output") > 0) {
     ofn = vm["output"].as<string>();
   }
 
-  if( !boost::filesystem::exists(ifn) )
-  {
-    cerr << "ERROR: input file '"<<ifn<<"' does not exist. Check spelling.\n";
+  if (!boost::filesystem::exists(ifn)) {
+    cerr << "ERROR: input file '" << ifn
+         << "' does not exist. Check spelling.\n";
     return 1;
   }
 
-  if( boost::filesystem::exists(ofn) && vm.count("overwrite") < 1 )
-  {
-    cerr << "ERROR: output file '"<<ofn<<"' exists. Use -x to overwrite.\n";
+  if (boost::filesystem::exists(ofn) && vm.count("overwrite") < 1) {
+    cerr << "ERROR: output file '" << ofn << "' exists. Use -x to overwrite.\n";
     return 1;
   }
 
-  ConvertHDF5Field2GPASCII3DDataFile(ifn,ofn);
-
+  if (vm["columns"].as<size_t>() == 3)
+    ConvertHDF5Field2GPASCII3DDataFile(ifn, ofn);
+  else if (vm["columns"].as<size_t>() == 2)
+    ConvertHDF5Field2GPASCII2DDataFile(ifn, ofn);
+  else {
+    std::cerr << "ERROR: Only 2 or 3 column files are supported. You specified "
+              << vm["columns"].as<size_t>() << "\n";
+    return 1;
+  }
 
   return 0;
 }

@@ -12,6 +12,132 @@
 #include "./io.hpp"
 #include "./transformations.hpp"
 
+int ReadGPASCII2DDataFile(const std::string& ifilename, GP2DData& data)
+{
+  if (!boost::filesystem::exists(ifilename)) {
+    throw std::runtime_error("No such file: " + ifilename);
+  }
+
+  std::ifstream fin;
+  std::string line;
+  GPASCIIDataLineParser<std::string::iterator> lparser;
+  bool r;
+  std::string::iterator it;
+
+  data.x.clear();
+  data.f.clear();
+
+  fin.open(ifilename.c_str());
+  BOOST_SCOPE_EXIT(&fin) { fin.close(); }
+  BOOST_SCOPE_EXIT_END
+
+  size_t linenumber = 0;
+  while (getline(fin, line)) {
+    linenumber++;
+    it = line.begin();
+    GPDataLine ldata;
+    r = qi::parse(it, line.end(), lparser, ldata);
+    if (r) {
+      if (ldata.data.size() > 2)
+        throw std::runtime_error("Too many columns found on line " +
+                                 boost::lexical_cast<std::string>(linenumber));
+
+      if (ldata.data.size() != 0 && ldata.data.size() < 2)
+        throw std::runtime_error("Too few columns found on line " +
+                                 boost::lexical_cast<std::string>(linenumber));
+
+      data.x.push_back(ldata.data[0]);
+      data.f.push_back(ldata.data[1]);
+    } else {
+      throw std::runtime_error("There was an error parsing the line '" + line +
+                               "'.");
+    }
+  }
+
+  return 0;
+}
+
+int WriteGPASCII2DDataFile(const std::string& ofilename, const GP2DData& data)
+{
+  std::ofstream fout;
+
+  fout.open(ofilename.c_str(), std::ios::out);
+  BOOST_SCOPE_EXIT(&fout) { fout.close(); }
+  BOOST_SCOPE_EXIT_END
+
+  size_t Nx = data.x.size();
+  for (int i = 0; i < Nx; ++i) {
+    fout << data.x[i] << " " << data.f[i] << "\n";
+  }
+
+  return 0;
+}
+
+int ReadHDF5Field2DDataFile(const std::string& ifilename, GP2DData& data)
+{
+  if (!boost::filesystem::exists(ifilename)) {
+    throw std::runtime_error("No such file: " + ifilename);
+  }
+
+  H5::H5File file(ifilename.c_str(), H5F_ACC_RDONLY);
+
+  hsize_t dims[1];
+  auto dset = file.openDataSet("field");
+  auto dspace = dset.getSpace();
+  if (dspace.getSimpleExtentNdims() != 1)
+    throw std::runtime_error("Cannot read field from file '" + ifilename +
+                             "'. Expecting 2D data (1D function), but found " +
+                             std::to_string(dspace.getSimpleExtentNdims()) +
+                             "D function.");
+  dspace.getSimpleExtentDims(dims);
+
+  // OK, we are ready to read data
+  data.x.clear();
+  data.f.clear();
+
+  data.x.resize(dims[0]);
+  data.f.resize(dims[0]);
+
+  dset.read(data.f.data(), H5::PredType::NATIVE_FLOAT);
+  dset.close();
+  {
+    auto dset = file.openDataSet("axis 0");
+    dset.read(data.x.data(), H5::PredType::NATIVE_FLOAT);
+    dset.close();
+  }
+
+  file.close();
+
+  return 0;
+}
+
+int WriteHDF5Field2DDataFile(const std::string& ofilename, const GP2DData& data)
+{
+  H5::H5File file(ofilename.c_str(), H5F_ACC_TRUNC);
+
+  hsize_t dims[1];
+  dims[0] = data.x.size();
+
+  {
+    H5::DataSpace dspace(1, dims);
+    auto dset =
+        file.createDataSet("axis 0", H5::PredType::NATIVE_FLOAT, dspace);
+    dset.write(data.x.data(), H5::PredType::NATIVE_FLOAT);
+    dset.close();
+  }
+
+  H5::DataSpace dspace(1, dims);
+  auto dset = file.createDataSet("field", H5::PredType::NATIVE_FLOAT, dspace);
+  dset.write(data.f.data(), H5::PredType::NATIVE_FLOAT);
+  dset.close();
+
+  file.close();
+}
+
+
+
+
+
 int ReadGPASCII3DDataFile(const std::string& ifilename, GP3DData& data)
 {
   if (!boost::filesystem::exists(ifilename)) {
@@ -71,6 +197,28 @@ int ReadGPASCII3DDataFile(const std::string& ifilename, GP3DData& data)
 
   return 0;
 }
+
+int WriteGPASCII3DDataFile(const std::string& ofilename, const GP3DData& data)
+{
+  std::ofstream fout;
+
+  fout.open(ofilename.c_str(), std::ios::out);
+  BOOST_SCOPE_EXIT(&fout) { fout.close(); }
+  BOOST_SCOPE_EXIT_END
+
+  size_t Nx = data.x.size();
+  size_t Ny = data.y.size();
+  for (int i = 0; i < Nx; ++i) {
+    for (int j = 0; j < Ny; ++j) {
+      fout << data.x[i] << " " << data.y[j] << " " << data.f[i * Ny + j]
+           << "\n";
+    }
+    fout << "\n";
+  }
+
+  return 0;
+}
+
 
 int ReadGPBinary3DDataFile(const std::string& ifilename, GP3DData& data)
 {
@@ -134,6 +282,29 @@ int ReadGPBinary3DDataFile(const std::string& ifilename, GP3DData& data)
   return 0;
 }
 
+int WriteGPBinary3DDataFile(const std::string& ofilename, const GP3DData& data)
+{
+  std::ofstream fout;
+
+  fout.open(ofilename.c_str(), std::ios::out | std::ios::binary);
+  BOOST_SCOPE_EXIT(&fout) { fout.close(); }
+  BOOST_SCOPE_EXIT_END
+
+  float tmp;
+  tmp = data.y.size();
+  fout.write(reinterpret_cast<const char*>(&tmp), sizeof(float));
+  fout.write(reinterpret_cast<const char*>(data.y.data()),
+             data.y.size() * sizeof(float));
+  for (int i = 0; i < data.x.size(); ++i) {
+    tmp = data.x[i];
+    fout.write(reinterpret_cast<const char*>(&tmp), sizeof(float));
+    fout.write(reinterpret_cast<const char*>(data.f.data() + i * data.y.size()),
+               data.y.size() * sizeof(float));
+  }
+
+  return 0;
+}
+
 int ReadHDF5Field3DDataFile(const std::string& ifilename, GP3DData& data)
 {
   if (!boost::filesystem::exists(ifilename)) {
@@ -178,6 +349,40 @@ int ReadHDF5Field3DDataFile(const std::string& ifilename, GP3DData& data)
 
   return 0;
 }
+
+int WriteHDF5Field3DDataFile(const std::string& ofilename, const GP3DData& data)
+{
+  H5::H5File file(ofilename.c_str(), H5F_ACC_TRUNC);
+
+  hsize_t dims[2];
+  dims[0] = data.x.size();
+  dims[1] = data.y.size();
+
+  {
+    H5::DataSpace dspace(1, &dims[0]);
+    auto dset =
+        file.createDataSet("axis 0", H5::PredType::NATIVE_FLOAT, dspace);
+    dset.write(data.x.data(), H5::PredType::NATIVE_FLOAT);
+    dset.close();
+  }
+  {
+    H5::DataSpace dspace(1, &dims[1]);
+    auto dset =
+        file.createDataSet("axis 1", H5::PredType::NATIVE_FLOAT, dspace);
+    dset.write(data.y.data(), H5::PredType::NATIVE_FLOAT);
+    dset.close();
+  }
+
+  H5::DataSpace dspace(2, dims);
+  auto dset = file.createDataSet("field", H5::PredType::NATIVE_FLOAT, dspace);
+  dset.write(data.f.data(), H5::PredType::NATIVE_FLOAT);
+  dset.close();
+
+  file.close();
+}
+
+
+
 
 int QueryGPBinary3DDataFile(const std::string& ifilename, GP3DDataInfo& info)
 {
@@ -229,79 +434,36 @@ int QueryGPBinary3DDataFile(const std::string& ifilename, GP3DDataInfo& info)
   }
 }
 
-int WriteGPBinary3DDataFile(const std::string& ofilename, const GP3DData& data)
+
+
+int ConvertGPASCII2HDF5Field2DDataFile(const std::string& ifilename,
+                                       const std::string& ofilename)
 {
-  std::ofstream fout;
-
-  fout.open(ofilename.c_str(), std::ios::out | std::ios::binary);
-  BOOST_SCOPE_EXIT(&fout) { fout.close(); }
-  BOOST_SCOPE_EXIT_END
-
-  float tmp;
-  tmp = data.y.size();
-  fout.write(reinterpret_cast<const char*>(&tmp), sizeof(float));
-  fout.write(reinterpret_cast<const char*>(data.y.data()),
-             data.y.size() * sizeof(float));
-  for (int i = 0; i < data.x.size(); ++i) {
-    tmp = data.x[i];
-    fout.write(reinterpret_cast<const char*>(&tmp), sizeof(float));
-    fout.write(reinterpret_cast<const char*>(data.f.data() + i * data.y.size()),
-               data.y.size() * sizeof(float));
+  if (!boost::filesystem::exists(ifilename)) {
+    throw std::runtime_error("No such file: " + ifilename);
   }
+
+  GP3DData data;
+
+  ReadGPASCII2DDataFile(ifilename, data);
+  WriteHDF5Field2DDataFile(ofilename, data);
 
   return 0;
 }
 
-int WriteGPASCII3DDataFile(const std::string& ofilename, const GP3DData& data)
+int ConvertHDF5Field2GPASCII2DDataFile(const std::string& ifilename,
+                                       const std::string& ofilename)
 {
-  std::ofstream fout;
-
-  fout.open(ofilename.c_str(), std::ios::out);
-  BOOST_SCOPE_EXIT(&fout) { fout.close(); }
-  BOOST_SCOPE_EXIT_END
-
-  size_t Nx = data.x.size();
-  size_t Ny = data.y.size();
-  for (int i = 0; i < Nx; ++i) {
-    for (int j = 0; j < Ny; ++j) {
-      fout << data.x[i] << " " << data.y[j] << " " << data.f[i * Ny + j]
-           << "\n";
-    }
-    fout << "\n";
+  if (!boost::filesystem::exists(ifilename)) {
+    throw std::runtime_error("No such file: " + ifilename);
   }
+
+  GP3DData data;
+
+  ReadHDF5Field2DDataFile(ifilename, data);
+  WriteGPASCII2DDataFile(ofilename, data);
 
   return 0;
-}
-
-int WriteHDF5Field3DDataFile(const std::string& ofilename, const GP3DData& data)
-{
-  H5::H5File file(ofilename.c_str(), H5F_ACC_TRUNC);
-
-  hsize_t dims[2];
-  dims[0] = data.x.size();
-  dims[1] = data.y.size();
-
-  {
-    H5::DataSpace dspace(1, &dims[0]);
-    auto dset =
-        file.createDataSet("axis 0", H5::PredType::NATIVE_FLOAT, dspace);
-    dset.write(data.x.data(), H5::PredType::NATIVE_FLOAT);
-    dset.close();
-  }
-  {
-    H5::DataSpace dspace(1, &dims[1]);
-    auto dset =
-        file.createDataSet("axis 1", H5::PredType::NATIVE_FLOAT, dspace);
-    dset.write(data.y.data(), H5::PredType::NATIVE_FLOAT);
-    dset.close();
-  }
-
-  H5::DataSpace dspace(2, dims);
-  auto dset = file.createDataSet("field", H5::PredType::NATIVE_FLOAT, dspace);
-  dset.write(data.f.data(), H5::PredType::NATIVE_FLOAT);
-  dset.close();
-
-  file.close();
 }
 
 int ConvertGPASCII2Binary3DDataFile(const std::string& ifilename,

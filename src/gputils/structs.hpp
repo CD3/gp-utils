@@ -24,27 +24,29 @@ struct GPDataLine {
   }
 };
 
-struct GP3DData {
+struct GP2DData {
   std::vector<float> x;
-  std::vector<float> y;
   std::vector<float> f;
   void clear()
   {
     x.clear();
-    y.clear();
     f.clear();
   }
 };
+struct GP3DData :public GP2DData {
+  std::vector<float> y;
+  void clear()
+  {
+    GP2DData::clear();
+    y.clear();
+  }
+};
 
-struct GP3DDataInfo {
+struct GP2DDataInfo {
   boost::optional<size_t> Nx;
-  boost::optional<size_t> Ny;
 
   boost::optional<float> xmin;
   boost::optional<float> xmax;
-
-  boost::optional<float> ymin;
-  boost::optional<float> ymax;
 
   boost::optional<size_t> size_in_bytes;
 
@@ -53,10 +55,20 @@ struct GP3DDataInfo {
     Nx = boost::none;
     xmin = boost::none;
     xmax = boost::none;
+    size_in_bytes = boost::none;
+  }
+};
+
+struct GP3DDataInfo :public GP2DDataInfo {
+  boost::optional<size_t> Ny;
+  boost::optional<float> ymin;
+  boost::optional<float> ymax;
+  void clear()
+  {
+    GP2DDataInfo::clear();
     Ny = boost::none;
     ymin = boost::none;
     ymax = boost::none;
-    size_in_bytes = boost::none;
   }
 };
 

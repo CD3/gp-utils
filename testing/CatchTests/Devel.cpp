@@ -467,11 +467,104 @@ TEST_CASE("File Input/Output", "[parsing]")
 
     }
 
-  }
+    SECTION("ASCII 2D Datafile")
+    {
+      GP2DData odata;
 
+      odata.x.push_back(1.1);
+      odata.x.push_back(1.2);
+      odata.x.push_back(1.3);
+      odata.f.push_back(1.1);
+      odata.f.push_back(2.1);
+      odata.f.push_back(3.1);
+
+      WriteGPASCII2DDataFile("test-2d.txt", odata);
+
+      GP2DData data;
+      ReadGPASCII2DDataFile("test-2d.txt", data);
+
+      CHECK( odata.x.size() == 3);
+      CHECK( odata.x[0]  == Approx(1.1));
+      CHECK( odata.x[1]  == Approx(1.2));
+      CHECK( odata.x[2]  == Approx(1.3));
+      CHECK( odata.f[0]  == Approx(1.1));
+      CHECK( odata.f[1]  == Approx(2.1));
+      CHECK( odata.f[2]  == Approx(3.1));
+
+
+    }
+
+    SECTION("HDF52D Datafile")
+    {
+      GP2DData odata;
+
+      odata.x.push_back(1.1);
+      odata.x.push_back(1.2);
+      odata.x.push_back(1.3);
+      odata.f.push_back(1.1);
+      odata.f.push_back(2.1);
+      odata.f.push_back(3.1);
+
+      WriteHDF5Field2DDataFile("test-2d.h5", odata);
+
+      GP2DData data;
+      ReadHDF5Field2DDataFile("test-2d.h5", data);
+
+      CHECK( odata.x.size() == 3);
+      CHECK( odata.x[0]  == Approx(1.1));
+      CHECK( odata.x[1]  == Approx(1.2));
+      CHECK( odata.x[2]  == Approx(1.3));
+      CHECK( odata.f[0]  == Approx(1.1));
+      CHECK( odata.f[1]  == Approx(2.1));
+      CHECK( odata.f[2]  == Approx(3.1));
+
+
+    }
+
+
+  }
 
   SECTION("File Write Functions")
   {
+    SECTION("ASCII 2D")
+    {
+      GP2DData data;
+
+      data.x.push_back(1.1);
+      data.x.push_back(1.2);
+      data.x.push_back(1.3);
+      data.f.push_back(1.1);
+      data.f.push_back(2.1);
+      data.f.push_back(3.1);
+
+      WriteGPASCII2DDataFile("test-2d.txt", data);
+
+      ifstream fin;
+      fin.open("test-2d.txt", ios::in);
+      float buffer;
+
+      fin >> buffer;
+      CHECK(buffer == Approx(1.1));
+      fin >> buffer;
+      CHECK(buffer == Approx(1.1));
+
+      fin >> buffer;
+      CHECK(buffer == Approx(1.2));
+      fin >> buffer;
+      CHECK(buffer == Approx(2.1));
+
+      fin >> buffer;
+      CHECK(buffer == Approx(1.3));
+      fin >> buffer;
+      CHECK(buffer == Approx(3.1));
+
+
+      CHECK(!(fin >> buffer));
+      CHECK(fin.eof());
+
+      fin.close();
+
+    }
     SECTION("ASCII 3D")
     {
       GP3DData data;
