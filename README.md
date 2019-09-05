@@ -29,12 +29,20 @@ when using splot if you are using Gnuplot 5.
 This is the only time that the difference will matter. All of the tools know about x and y coordinates, which have not changed in
 the ASCII file format.
 
-At some point, the binary format may be switched to Gnuplot 5, or perhaps an option to specify which format to use will be added.
-But it simpler to convert from plain-text to version 4 binary, because the matrix is stored in row-major order in binary file, which
-means that elements in the same row and different columns are stored next to each other. If you look at the plain-text format, elements
-with the same x coordinate and different y coordinates are stored next to each other, which implies that the x coordinates are row indices.
+At some point, the binary format may be switched to Gnuplot 5, or perhaps an
+option to specify which format to use will be added.  But it is simpler to
+convert from plain text to version 4 binary, because the matrix is stored in
+row-major order in binary file, which means that elements in the same row and
+different columns are stored next to each other. If you look at the plain-text
+format, elements with the same x coordinate and different y coordinates are
+stored next to each other, which implies that the x coordinates are row
+indices.
 
-## Usage
+## Conversion Utilities
+
+Utility commands to convert between Gnuplot's ASCII file format and Gnuplot's binary file format are provided.
+utility commands to convert between Gnuplot's ASCII file format and the HDF5 file format are also provided. HDF5 files
+are assumed to be compatible with the files read/written by [`libField`](https://github.com/CD3/libField).
 
 ### gp-utils-ascii2bin
 ```bash
@@ -125,6 +133,112 @@ Examples:
     $ gp-utils-bin2ascii -x -o plain-text-data.bin data.bin
 
 ```
+
+### gp-utils-ascii2hdf5
+```bash
+gp-utils-ascii2hdf5 [options] <datafile>
+
+Options:
+  -h [ --help ]             print help message.
+  -o [ --output ] arg       file to write output to.
+  -c [ --columns ] arg (=3) number of ASCII columns (2 or 3).
+  -x [ --overwrite ]        overwrite existing output files.
+
+Arguments:
+  <datafile>      the datafile to convert.
+
+Converts an ASCII Gnuplot datafile to HDF5 format. The format written is the format used by `libField` (https://github.com/CD3/libField).
+Each coordinate axis is written to a dataset named "axis <N>", where N is the axis number (starting at zero), and the function
+is written to a dataset named field. For example:
+
+A file named "example.txt" containing
+
+```
+0 1 10
+0 2 20
+0 3 30
+
+10 1 11
+10 2 21
+10 3 31
+```
+
+would be written to a HDF5 file with the text representation (run `h5dump` on the file)
+
+```
+HDF5 "example.h5" {
+GROUP "/" {
+   DATASET "axis 0" {
+      DATATYPE  H5T_IEEE_F32LE
+      DATASPACE  SIMPLE { ( 2 ) / ( 2 ) }
+      DATA {
+      (0): 0, 10
+      }
+   }
+   DATASET "axis 1" {
+      DATATYPE  H5T_IEEE_F32LE
+      DATASPACE  SIMPLE { ( 3 ) / ( 3 ) }
+      DATA {
+      (0): 0, 1, 3
+      }
+   }
+   DATASET "field" {
+      DATATYPE  H5T_IEEE_F32LE
+      DATASPACE  SIMPLE { ( 2, 3 ) / ( 2, 3 ) }
+      DATA {
+      (0): 10, 20, 30, 11, 21, 31
+      }
+   }
+}
+}
+```
+
+Both 2 and 3 column ASCII files are supported. By default, 3 columns are assumed. To convert 2 column
+files, use `--columns 2`.
+
+Examples:
+
+  Convert 3 column ASCII data file named 'data.txt' to HDF5 field data file named 'data.h5'
+    
+    $ gp-utils-ascii2hdf5 data.txt
+
+  By default, gp-utils-ascii2hdf5 won't overwrite the output file if it exists. Use the -x option to override this.
+  Convert 3 column ASCII data file named 'data.txt' to HDF5 field data file named 'data.h5', overwriting it if
+  it already exists.
+
+    $ gp-utils-ascii2hdf5 -x data.txt
+
+  Convert 3 column ASCII data file named 'data.txt' to HDF5 field data file named 'binary-data.h5', overwriting it if
+  it already exists.
+
+    $ gp-utils-ascii2hdf5 -x -o binary-data.h5 data.txt
+
+```
+
+### gp-utils-hdf52ascii
+```bash
+gp-utils-hdf52ascii [options] <datafile>
+
+Options:
+  -h [ --help ]             print help message.
+  -o [ --output ] arg       file to write output to.
+  -c [ --columns ] arg (=3) number of ASCII columns (2 or 3).
+  -x [ --overwrite ]        overwrite existing output files.
+
+Arguments:
+  <datafile>      the datafile to convert.
+
+Converts a HDF5 datafile to ASCII Gnuplot format. The hdf5 format is the format used by `libField` (https://github.com/CD3/libField), and
+is the format written by `gp-utils-ascii2hdf5`. Both 2 and 3 column ASCII files are supported. By default, 3 columns are assumed. To convert
+2 column files, use `--columns 2`.
+```
+
+
+## Transform and Filter Utilities
+
+Utilities for doing common data transformations and filtering are also provided. For example, a utility
+to convert a 2D datafile in cylindrical coordinates with azimuthal symmetry to a 3D datafile in Cartesian coordinates provided.
+This is useful for example to create an `splot` of a circular, symmetric laser beam.
 
 ### gp-utils-cyl2rec
 ```bash

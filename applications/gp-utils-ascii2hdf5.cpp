@@ -92,7 +92,7 @@ GROUP "/" {
    }
    DATASET "field" {
       DATATYPE  H5T_IEEE_F32LE
-      DATASPACE  SIMPLE { ( 6 ) / ( 6 ) }
+      DATASPACE  SIMPLE { ( 2, 3 ) / ( 2, 3 ) }
       DATA {
       (0): 10, 20, 30, 11, 21, 31
       }
