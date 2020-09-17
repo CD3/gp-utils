@@ -132,6 +132,8 @@ int WriteHDF5Field2DDataFile(const std::string& ofilename, const GP2DData& data)
   dset.close();
 
   file.close();
+
+  return 0;
 }
 
 
@@ -379,6 +381,8 @@ int WriteHDF5Field3DDataFile(const std::string& ofilename, const GP3DData& data)
   dset.close();
 
   file.close();
+
+  return 0;
 }
 
 
@@ -432,6 +436,8 @@ int QueryGPBinary3DDataFile(const std::string& ifilename, GP3DDataInfo& info)
   } else {
     info.xmax = info.xmin.get();
   }
+
+  return 0;
 }
 
 

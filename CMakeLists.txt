@@ -16,16 +16,15 @@ GIT_VERSION(gp-utils)
 message( STATUS "gp-utils version: ${gp-utils_VERSION}")
 project(gp-utils VERSION ${gp-utils_VERSION})
 # need to run configure_file twice
-configure_file( "${CMAKE_CURRENT_SOURCE_DIR}/src/${PROJECT_NAME}_version.h.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/include/${PROJECT_NAME}_version.h")
-configure_file( "${CMAKE_CURRENT_BINARY_DIR}/include/${PROJECT_NAME}_version.h"
-                "${CMAKE_CURRENT_BINARY_DIR}/include/${PROJECT_NAME}_version.h")
+configure_file( "${CMAKE_CURRENT_SOURCE_DIR}/src/gputils/version.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/include/gputils/version.h")
+configure_file( "${CMAKE_CURRENT_BINARY_DIR}/include/gputils/version.h"
+                "${CMAKE_CURRENT_BINARY_DIR}/include/gputils/version.h")
 
 # common dependencies
-include(macro-find_project_dependency)
 find_package( Boost COMPONENTS filesystem REQUIRED )
 find_package( hdf5 REQUIRED )
-find_package( libInterp REQUIRED )
+find_package( libInterpolate REQUIRED )
 
 string( REGEX REPLACE "^lib" "" LIB_NAME ${PROJECT_NAME} )
 add_library( ${LIB_NAME} )
@@ -49,7 +48,7 @@ target_link_libraries(${LIB_NAME}
                         PUBLIC
                           Boost::boost
                           Boost::filesystem
-                          libInterp::Interp
+                          libInterpolate::Interpolate
                           hdf5::hdf5_cpp-static
                      )
 
@@ -73,11 +72,11 @@ install( TARGETS ${LIB_NAME} EXPORT ${PROJECT_NAME}Targets
   INCLUDES DESTINATION include/${PROJECT_NAME}
 )
 install(DIRECTORY src/
-  DESTINATION include/${PROJECT_NAME}
+  DESTINATION include/
   FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
 )
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
-  DESTINATION include/${PROJECT_NAME}
+  DESTINATION include
   FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
 )
 install(EXPORT ${PROJECT_NAME}Targets

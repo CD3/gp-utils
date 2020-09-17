@@ -1,4 +1,4 @@
-#include <Interp.hpp>
+#include <libInterpolate/Interpolate.hpp>
 #include "./transformations.hpp"
 
 int ConvertGP3DDataCylindrical2Cartesian( const GP3DData& idata, std::vector<GP3DData>& odata )
@@ -64,6 +64,7 @@ int ConvertGP3DDataCylindrical2Cartesian( const GP3DData& idata, std::vector<GP3
 
   }
 
+  return 0;
 }
 int FilterGP3DData( const GP3DData& idata, GP3DData& odata, const std::string& every_spec )
   {
@@ -134,5 +135,6 @@ int FilterGP3DData( const GP3DData& idata, GP3DData& odata, const std::string& e
     }
 
 
+    return 0;
 
   }
