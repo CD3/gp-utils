@@ -55,15 +55,15 @@ EOF
 cat << EOF > CMakeLists.txt
 cmake_minimum_required(VERSION 3.1)
 add_executable( main main.cpp )
-find_package( gp-utils REQUIRED )
-target_link_libraries(main gp-utils::gp-utils)
+find_package( gputils REQUIRED )
+target_link_libraries(main gputils::gputils)
 set_target_properties(main PROPERTIES CXX_STANDARD 14)
 EOF
 
 mkdir build1
 cd build1
 conan install ${root} --build missing
-veval cmake .. -Dgp-utils_DIR=${bindir}/install/cmake/
+veval cmake .. -Dgputils_DIR=${bindir}/install/cmake/
 cmake --build .
 
 cd ..
@@ -79,7 +79,7 @@ EOF
 
 cd build1
 conan install ${root} --build missing
-veval cmake .. -Dgp-utils_DIR=${bindir}/install/cmake/
+veval cmake .. -Dgputils_DIR=${bindir}/install/cmake/
 cmake --build .
 ./main
 

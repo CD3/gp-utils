@@ -1,8 +1,8 @@
 cmake_minimum_required( VERSION 3.11 )
 
-if( TARGET gp-utils )
+if( TARGET gputils )
   return()
-endif( TARGET gp-utils )
+endif( TARGET gputils )
 
 OPTION( BUILD_UNIT_TESTS "Build unit tests for the library" ON )
 OPTION( INSTALL_LIBRARY "Build and install library and header files." ON )
@@ -12,9 +12,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Mo
 set(INSTALL_PATH ${INSTALL_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/externals/install/")
 
 include(function-git_version)
-GIT_VERSION(gp-utils)
-message( STATUS "gp-utils version: ${gp-utils_VERSION}")
-project(gp-utils VERSION ${gp-utils_VERSION})
+GIT_VERSION(gputils)
+message( STATUS "gputils version: ${gputils_VERSION}")
+project(gputils VERSION ${gputils_VERSION})
 # need to run configure_file twice
 configure_file( "${CMAKE_CURRENT_SOURCE_DIR}/src/gputils/version.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/include/gputils/version.h")
