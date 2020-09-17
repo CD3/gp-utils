@@ -69,10 +69,10 @@ install( TARGETS ${LIB_NAME} EXPORT ${PROJECT_NAME}Targets
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
-  INCLUDES DESTINATION include/${PROJECT_NAME}
+  INCLUDES DESTINATION include
 )
 install(DIRECTORY src/
-  DESTINATION include/
+  DESTINATION include
   FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
 )
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
@@ -86,8 +86,9 @@ install(EXPORT ${PROJECT_NAME}Targets
 )
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
 "include(CMakeFindDependencyMacro)
-find_dependency(Boost)
-find_dependency( Eigen3 )
+find_package( Boost COMPONENTS filesystem )
+find_package( hdf5 )
+find_package( libInterpolate )
 include(\${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}Targets.cmake)
 "
   )
