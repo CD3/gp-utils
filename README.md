@@ -1,10 +1,10 @@
 # gp-utils
 
-A collection of tools for working with gnuplot data files.
+A C++ library for working with gnuplot data files with a collection of CLI tools.
 
 ## Description
 
-`gp-utils` is a collection of command line utilities for doing common datafile manipulations. They are particularly useful when
+`gp-utils` is a C++ library for doing common datafile manipulations that comes with a collection of command line utilities. They are particularly useful when
 working with large datasets, which was the primary motivation for writing them. For example, there are tools for converting ASCII
 files of 3D data (data that would be plotted with `splot`) to Gnuplot's binary matrix format, which can be several times smaller in
 size, and are much faster to load in gnuplot.
