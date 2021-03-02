@@ -12,8 +12,11 @@
 #include "./io.hpp"
 #include "./transformations.hpp"
 
-int ReadGPASCII2DDataFile(const std::string& ifilename, GP2DData& data)
+int ReadGPASCII2DDataFile(std::string ifilename, GP2DData& data)
 {
+  if(ifilename == "-")
+    ifilename = "/dev/stdin";
+
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
   }
@@ -57,8 +60,11 @@ int ReadGPASCII2DDataFile(const std::string& ifilename, GP2DData& data)
   return 0;
 }
 
-int WriteGPASCII2DDataFile(const std::string& ofilename, const GP2DData& data)
+int WriteGPASCII2DDataFile(std::string ofilename, const GP2DData& data)
 {
+  if(ofilename == "-")
+    ofilename = "/dev/stdout";
+
   std::ofstream fout;
 
   fout.open(ofilename.c_str(), std::ios::out);
@@ -73,7 +79,7 @@ int WriteGPASCII2DDataFile(const std::string& ofilename, const GP2DData& data)
   return 0;
 }
 
-int ReadHDF5Field2DDataFile(const std::string& ifilename, GP2DData& data)
+int ReadHDF5Field2DDataFile(std::string ifilename, GP2DData& data)
 {
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
@@ -111,7 +117,7 @@ int ReadHDF5Field2DDataFile(const std::string& ifilename, GP2DData& data)
   return 0;
 }
 
-int WriteHDF5Field2DDataFile(const std::string& ofilename, const GP2DData& data)
+int WriteHDF5Field2DDataFile(std::string ofilename, const GP2DData& data)
 {
   H5::H5File file(ofilename.c_str(), H5F_ACC_TRUNC);
 
@@ -140,8 +146,11 @@ int WriteHDF5Field2DDataFile(const std::string& ofilename, const GP2DData& data)
 
 
 
-int ReadGPASCII3DDataFile(const std::string& ifilename, GP3DData& data)
+int ReadGPASCII3DDataFile(std::string ifilename, GP3DData& data)
 {
+  if(ifilename == "-")
+    ifilename = "/dev/stdin";
+
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
   }
@@ -200,8 +209,11 @@ int ReadGPASCII3DDataFile(const std::string& ifilename, GP3DData& data)
   return 0;
 }
 
-int WriteGPASCII3DDataFile(const std::string& ofilename, const GP3DData& data)
+int WriteGPASCII3DDataFile(std::string ofilename, const GP3DData& data)
 {
+  if(ofilename == "-")
+    ofilename = "/dev/stdout";
+
   std::ofstream fout;
 
   fout.open(ofilename.c_str(), std::ios::out);
@@ -222,7 +234,7 @@ int WriteGPASCII3DDataFile(const std::string& ofilename, const GP3DData& data)
 }
 
 
-int ReadGPBinary3DDataFile(const std::string& ifilename, GP3DData& data)
+int ReadGPBinary3DDataFile(std::string ifilename, GP3DData& data)
 {
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
@@ -284,7 +296,7 @@ int ReadGPBinary3DDataFile(const std::string& ifilename, GP3DData& data)
   return 0;
 }
 
-int WriteGPBinary3DDataFile(const std::string& ofilename, const GP3DData& data)
+int WriteGPBinary3DDataFile(std::string ofilename, const GP3DData& data)
 {
   std::ofstream fout;
 
@@ -307,7 +319,7 @@ int WriteGPBinary3DDataFile(const std::string& ofilename, const GP3DData& data)
   return 0;
 }
 
-int ReadHDF5Field3DDataFile(const std::string& ifilename, GP3DData& data)
+int ReadHDF5Field3DDataFile(std::string ifilename, GP3DData& data)
 {
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
@@ -352,7 +364,7 @@ int ReadHDF5Field3DDataFile(const std::string& ifilename, GP3DData& data)
   return 0;
 }
 
-int WriteHDF5Field3DDataFile(const std::string& ofilename, const GP3DData& data)
+int WriteHDF5Field3DDataFile(std::string ofilename, const GP3DData& data)
 {
   H5::H5File file(ofilename.c_str(), H5F_ACC_TRUNC);
 
@@ -388,7 +400,7 @@ int WriteHDF5Field3DDataFile(const std::string& ofilename, const GP3DData& data)
 
 
 
-int QueryGPBinary3DDataFile(const std::string& ifilename, GP3DDataInfo& info)
+int QueryGPBinary3DDataFile(std::string ifilename, GP3DDataInfo& info)
 {
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
@@ -442,8 +454,8 @@ int QueryGPBinary3DDataFile(const std::string& ifilename, GP3DDataInfo& info)
 
 
 
-int ConvertGPASCII2HDF5Field2DDataFile(const std::string& ifilename,
-                                       const std::string& ofilename)
+int ConvertGPASCII2HDF5Field2DDataFile(std::string ifilename,
+                                       std::string ofilename)
 {
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
@@ -457,8 +469,8 @@ int ConvertGPASCII2HDF5Field2DDataFile(const std::string& ifilename,
   return 0;
 }
 
-int ConvertHDF5Field2GPASCII2DDataFile(const std::string& ifilename,
-                                       const std::string& ofilename)
+int ConvertHDF5Field2GPASCII2DDataFile(std::string ifilename,
+                                       std::string ofilename)
 {
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
@@ -472,8 +484,8 @@ int ConvertHDF5Field2GPASCII2DDataFile(const std::string& ifilename,
   return 0;
 }
 
-int ConvertGPASCII2Binary3DDataFile(const std::string& ifilename,
-                                    const std::string& ofilename,
+int ConvertGPASCII2Binary3DDataFile(std::string ifilename,
+                                    std::string ofilename,
                                     ConvertMethod method)
 {
   if (!boost::filesystem::exists(ifilename)) {
@@ -603,8 +615,8 @@ int ConvertGPASCII2Binary3DDataFile(const std::string& ifilename,
   return 1;
 }
 
-int ConvertGPBinary2ASCII3DDataFile(const std::string& ifilename,
-                                    const std::string& ofilename)
+int ConvertGPBinary2ASCII3DDataFile(std::string ifilename,
+                                    std::string ofilename)
 {
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
@@ -621,8 +633,8 @@ int ConvertGPBinary2ASCII3DDataFile(const std::string& ifilename,
   return 0;
 }
 
-int ConvertGPASCII2HDF5Field3DDataFile(const std::string& ifilename,
-                                       const std::string& ofilename)
+int ConvertGPASCII2HDF5Field3DDataFile(std::string ifilename,
+                                       std::string ofilename)
 {
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
@@ -639,8 +651,8 @@ int ConvertGPASCII2HDF5Field3DDataFile(const std::string& ifilename,
   return 0;
 }
 
-int ConvertHDF5Field2GPASCII3DDataFile(const std::string& ifilename,
-                                       const std::string& ofilename)
+int ConvertHDF5Field2GPASCII3DDataFile(std::string ifilename,
+                                       std::string ofilename)
 {
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
@@ -654,9 +666,9 @@ int ConvertHDF5Field2GPASCII3DDataFile(const std::string& ifilename,
   return 0;
 }
 
-int FilterGPBinary3DDataFile(const std::string& ifilename,
-                             const std::string& ofilename,
-                             const std::string& every_spec, FilterMethod method)
+int FilterGPBinary3DDataFile(std::string ifilename,
+                             std::string ofilename,
+                             std::string every_spec, FilterMethod method)
 {
   if (!boost::filesystem::exists(ifilename)) {
     throw std::runtime_error("No such file: " + ifilename);
@@ -760,8 +772,8 @@ int FilterGPBinary3DDataFile(const std::string& ifilename,
   return 1;
 }
 
-int ConvertGPBinary3DDataFileCylindrical2Cartesian(const std::string& ifilename,
-                                                   const std::string& ofilename)
+int ConvertGPBinary3DDataFileCylindrical2Cartesian(std::string ifilename,
+                                                   std::string ofilename)
 
 {
   if (!boost::filesystem::exists(ifilename)) {

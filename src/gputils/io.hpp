@@ -45,46 +45,46 @@ struct GPASCIIDataLineParser : spt::qi::grammar<Iterator, GPDataLine()> {
   }
 };
 
-int ReadGPASCII2DDataFile(const std::string& filename, GP2DData& data);
-int WriteGPASCII2DDataFile(const std::string& filename, const GP2DData& data);
-int ReadHDF5Field2DDataFile(const std::string& filename, GP2DData& data);
-int WriteHDF5Field2DDataFile(const std::string& filename, const GP2DData& data);
+int ReadGPASCII2DDataFile(std::string filename, GP2DData& data);
+int WriteGPASCII2DDataFile(std::string filename, const GP2DData& data);
+int ReadHDF5Field2DDataFile(std::string filename, GP2DData& data);
+int WriteHDF5Field2DDataFile(std::string filename, const GP2DData& data);
 
-int ReadGPASCII3DDataFile(const std::string& filename, GP3DData& data);
-int WriteGPASCII3DDataFile(const std::string& filename, const GP3DData& data);
-int ReadGPBinary3DDataFile(const std::string& filename, GP3DData& data);
-int WriteGPBinary3DDataFile(const std::string& filename, const GP3DData& data);
-int ReadHDF5Field3DDataFile(const std::string& filename, GP3DData& data);
-int WriteHDF5Field3DDataFile(const std::string& filename, const GP3DData& data);
+int ReadGPASCII3DDataFile(std::string filename, GP3DData& data);
+int WriteGPASCII3DDataFile(std::string filename, const GP3DData& data);
+int ReadGPBinary3DDataFile(std::string filename, GP3DData& data);
+int WriteGPBinary3DDataFile(std::string filename, const GP3DData& data);
+int ReadHDF5Field3DDataFile(std::string filename, GP3DData& data);
+int WriteHDF5Field3DDataFile(std::string filename, const GP3DData& data);
 
-int QueryGPBinary3DDataFile(const std::string& filename, GP3DDataInfo& info);
+int QueryGPBinary3DDataFile(std::string filename, GP3DDataInfo& info);
 
 
-int ConvertGPASCII2HDF5Field2DDataFile(const std::string& ifilename,
-                                       const std::string& ofilename);
-int ConvertHDF5Field2GPASCII2DDataFile(const std::string& ifilename,
-                                       const std::string& ofilename);
+int ConvertGPASCII2HDF5Field2DDataFile(std::string ifilename,
+                                       std::string ofilename);
+int ConvertHDF5Field2GPASCII2DDataFile(std::string ifilename,
+                                       std::string ofilename);
 
 
 enum class ConvertMethod { ReadThenWrite, SimultaneousReadWrite };
-int ConvertGPASCII2Binary3DDataFile(const std::string& ifilename,
-                                    const std::string& ofilename,
+int ConvertGPASCII2Binary3DDataFile(std::string ifilename,
+                                    std::string ofilename,
                                     ConvertMethod method = ConvertMethod::ReadThenWrite);
 
-int ConvertGPBinary2ASCII3DDataFile(const std::string& ifilename,
-                                    const std::string& ofilename);
+int ConvertGPBinary2ASCII3DDataFile(std::string ifilename,
+                                    std::string ofilename);
 
-int ConvertGPASCII2HDF5Field3DDataFile(const std::string& ifilename,
-                                       const std::string& ofilename);
-int ConvertHDF5Field2GPASCII3DDataFile(const std::string& ifilename,
-                                     const std::string& ofilename);
+int ConvertGPASCII2HDF5Field3DDataFile(std::string ifilename,
+                                       std::string ofilename);
+int ConvertHDF5Field2GPASCII3DDataFile(std::string ifilename,
+                                       std::string ofilename);
 
 enum class FilterMethod { ReadThenWrite, SimultaneousReadWrite };
-int FilterGPBinary3DDataFile(const std::string& ifilename,
-                                   const std::string& ofilename,
-                                   const std::string& every_spec,
+int FilterGPBinary3DDataFile(std::string ifilename,
+                             std::string ofilename,
+                             std::string every_spec,
                                    FilterMethod method = FilterMethod::ReadThenWrite);
 
-int ConvertGPBinary3DDataFileCylindrical2Cartesian(const std::string& ifilename,
-                                                   const std::string& ofilename);
+int ConvertGPBinary3DDataFileCylindrical2Cartesian(std::string ifilename,
+                                                   std::string ofilename);
 #endif  // include protector

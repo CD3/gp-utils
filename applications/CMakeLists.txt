@@ -4,7 +4,7 @@ project( gp-utils-applications VERSION 1.0.0.0 )
 
 # We can't build applications unless the boost program_options library is available.
 find_package( Boost ${${PROJECT_NAME}_Boost_LIBRARY_VERSION} REQUIRED COMPONENTS program_options )
-add_subdirectory( .. gp-utils)
+add_subdirectory( .. gputils)
 
 # The code below will detect all .cpp files in the `applications` directory
 # and compile them into executables.
@@ -26,7 +26,7 @@ foreach(appSrc ${application_SOURCES})
 
 	target_link_libraries( ${appName} 
 	PUBLIC
-		gp-utils::gp-utils
+		gputils::gputils
 		Boost::program_options
 		)
 
